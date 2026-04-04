@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apresentação — Landings — CDN</title>
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/layout.css" />
+  <link rel="stylesheet" href="/static/css/components.css" />
+  <style>
+    .landings-timeline {
+      position: relative;
+      padding-left: var(--sp-6);
+      margin-top: var(--sp-5);
+    }
+    .landings-timeline::before {
+      content: "";
+      position: absolute;
+      left: 11px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--c-border-soft);
+      border-radius: 1px;
+    }
+    .landings-timeline-item {
+      position: relative;
+      padding-bottom: var(--sp-8);
+    }
+    .landings-timeline-item:last-child {
+      padding-bottom: 0;
+    }
+    .landings-timeline-dot {
+      position: absolute;
+      left: calc(-1 * var(--sp-6) + 4px);
+      top: 6px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--c-teal);
+      border: 3px solid var(--c-bg-elevated, #fff);
+      box-shadow: 0 0 0 2px var(--c-border-soft);
+    }
+    .landings-timeline-meta {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--c-text-4);
+      margin-bottom: var(--sp-2);
+    }
+    .landings-timeline-title {
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--c-text-1);
+      margin: 0 0 var(--sp-2);
+    }
+    .landings-timeline-desc {
+      font-size: var(--text-sm);
+      color: var(--c-text-3);
+      margin: 0 0 var(--sp-4);
+      line-height: 1.55;
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🌿</div>
+      <div class="logo-text">
+        <span class="logo-title">CDN</span>
+        <span class="logo-sub">Cria da Natureza</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item" data-page="dashboard">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="/estoque.html" class="nav-item" data-page="estoque">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        Estoque
+      </a>
+      <a href="/parceiros.html" class="nav-item" data-page="parceiros">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Parceiros
+      </a>
+      <a href="/financeiro.html" class="nav-item" data-page="financeiro">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Financeiro
+      </a>
+      <a href="/configuracoes.html" class="nav-item" data-page="config">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Configurações
+      </a>
+      <a href="/apresentacao-landings.html" class="nav-item active" data-page="apresentacao">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Apresentação
+      </a>
+    </nav>
+    <div class="sidebar-footer"><p class="sidebar-version">CDN v1.0 · 2025</p></div>
+  </aside>
+
+  <div class="sidebar-overlay overlay" id="sidebarOverlay"></div>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="sidebar-toggle btn btn-ghost btn-icon" aria-label="Menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-left">
+        <h1 class="page-title">Landings — apresentação</h1>
+        <span class="page-subtitle">Timeline de versões para a banca (projeto acadêmico)</span>
+      </div>
+    </header>
+
+    <main class="page-content" style="max-width:720px">
+
+      <section class="page-section">
+        <div class="card card-padded">
+          <h2 class="section-title" style="margin-bottom:var(--sp-3)">Como versionar</h2>
+          <p style="font-size:var(--text-sm);color:var(--c-text-3);line-height:1.6;margin:0">
+            Cada versão publicada fica em <code style="font-size:0.9em">frontend/landing/vN/</code> e não deve ser sobrescrita depois.
+            Para uma nova proposta: copie a pasta (por exemplo <code style="font-size:0.9em">v2</code> → <code style="font-size:0.9em">v3</code>),
+            edite só dentro de <code style="font-size:0.9em">v3</code> e acrescente um novo bloco na timeline abaixo com data, título e link
+            <code style="font-size:0.9em">/landing/v3/</code>.
+          </p>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="section-header" style="margin-bottom:0">
+          <h2 class="section-title">Timeline</h2>
+          <span class="badge badge-teal">Produção congelada</span>
+        </div>
+
+        <div class="landings-timeline">
+
+          <article class="landings-timeline-item">
+            <span class="landings-timeline-dot" aria-hidden="true"></span>
+            <div class="landings-timeline-meta">Versão 1</div>
+            <h3 class="landings-timeline-title">Landing — primeira entrega</h3>
+            <p class="landings-timeline-desc">
+              Primeira proposta de página pública. Tema claro, estrutura base em <code>frontend/landing/v1/</code>.
+            </p>
+            <a href="/landing/v1/" class="btn btn-primary btn-sm" target="_blank" rel="noopener">Abrir landing v1</a>
+          </article>
+
+          <article class="landings-timeline-item">
+            <span class="landings-timeline-dot" aria-hidden="true"></span>
+            <div class="landings-timeline-meta">Versão 2</div>
+            <h3 class="landings-timeline-title">Landing — segunda proposta</h3>
+            <p class="landings-timeline-desc">
+              Iteração com visual distinto (ex.: tema escuro). Ficheiros em <code>frontend/landing/v2/</code>.
+            </p>
+            <a href="/landing/v2/" class="btn btn-primary btn-sm" target="_blank" rel="noopener">Abrir landing v2</a>
+          </article>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+
+<script src="/static/js/api.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    if (typeof setActivePage === "function") setActivePage("apresentacao");
+  });
+</script>
+</body>
+</html>

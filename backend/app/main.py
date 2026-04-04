@@ -39,6 +39,14 @@ if os.path.exists(FRONTEND_DIR):
     app.mount("/static/css", StaticFiles(directory=os.path.join(FRONTEND_DIR, "css")), name="css")
     app.mount("/static/js", StaticFiles(directory=os.path.join(FRONTEND_DIR, "js")), name="js")
 
+    LANDING_DIR = os.path.join(FRONTEND_DIR, "landing")
+    if os.path.isdir(LANDING_DIR):
+        app.mount(
+            "/landing",
+            StaticFiles(directory=LANDING_DIR, html=True),
+            name="landing",
+        )
+
     @app.get("/", include_in_schema=False)
     async def index():
         return FileResponse(os.path.join(FRONTEND_DIR, "html", "index.html"))
