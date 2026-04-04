@@ -3,21 +3,233 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cria da Natureza — Landing v1</title>
+  <title>Cria da Natureza — Cosméticos Naturais e Veganos</title>
   <link rel="stylesheet" href="/landing/v1/styles.css" />
 </head>
 <body>
-  <article class="landing-v1">
-    <span class="badge">Versão 1 · congelada para apresentação</span>
-    <h1>Cria da Natureza</h1>
-    <p>
-      Placeholder da primeira landing. Substitua este conteúdo pelo design final em
-      <code>frontend/landing/v1/</code> sem alterar versões anteriores já entregues — para novas
-      propostas, copie a pasta para <code>v2</code>, <code>v3</code>, etc.
+
+  <!-- NAV -->
+  <nav class="nav">
+    <a class="nav-brand" href="#">
+      <span class="leaf">🌿</span> Cria da Natureza
+    </a>
+    <ul class="nav-links">
+      <li><a href="#sobre">Sobre</a></li>
+      <li><a href="#produtos">Produtos</a></li>
+      <li><a href="#valores">Valores</a></li>
+      <li><a href="#contato" class="nav-cta">Contato</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-text">
+      <span class="hero-eyebrow">100% Natural &amp; Vegano</span>
+      <h1 class="hero-title">
+        Beleza que nasce<br><span>da natureza</span>
+      </h1>
+      <p class="hero-desc">
+        Cosméticos artesanais formulados com ingredientes naturais, livres de crueldade
+        e pensados para cuidar de você com o que a terra tem de melhor.
+      </p>
+      <div class="hero-actions">
+        <a href="#produtos" class="btn-primary">Ver produtos</a>
+        <a href="#sobre" class="btn-outline">Nossa história</a>
+      </div>
+    </div>
+    <div class="img-placeholder hero-img" aria-label="Imagem hero">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+      </svg>
+      <span>Foto principal</span>
+    </div>
+  </section>
+
+  <!-- BAND / STATS -->
+  <div class="band">
+    <div class="band-stat">
+      <strong>100%</strong>
+      <span>Natural</span>
+    </div>
+    <div class="band-stat">
+      <strong>Vegano</strong>
+      <span>Cruelty-free</span>
+    </div>
+    <div class="band-stat">
+      <strong>Artesanal</strong>
+      <span>Feito à mão</span>
+    </div>
+    <div class="band-stat">
+      <strong>Sustentável</strong>
+      <span>Embalagens eco</span>
+    </div>
+  </div>
+
+  <!-- SOBRE -->
+  <section class="section" id="sobre">
+    <div class="about-grid">
+      <div>
+        <span class="section-label">Nossa história</span>
+        <h2 class="section-title">Criado com amor,<br>direto da natureza</h2>
+        <div class="about-body">
+          <p>
+            A Cria da Natureza nasceu da paixão por ingredientes puros e do desejo de
+            oferecer produtos que respeitem o seu corpo e o planeta. Cada fórmula é
+            desenvolvida com cuidado, unindo saberes ancestrais e ciência moderna.
+          </p>
+          <p>
+            Acreditamos que a beleza verdadeira é simples: sem químicos desnecessários,
+            sem testes em animais, com embalagens pensadas para reduzir o impacto ambiental.
+          </p>
+        </div>
+        <div class="about-tags">
+          <span class="tag">🌱 Vegano</span>
+          <span class="tag">🐰 Cruelty-free</span>
+          <span class="tag">♻️ Sustentável</span>
+          <span class="tag">🌿 Sem parabenos</span>
+          <span class="tag">✋ Artesanal</span>
+        </div>
+      </div>
+      <div class="img-placeholder about-img" aria-label="Imagem sobre nós">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        <span>Foto — bastidores</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUTOS -->
+  <div class="products-bg" id="produtos">
+    <div class="products-wrap">
+      <div class="section-header">
+        <span class="section-label">Produtos</span>
+        <h2 class="section-title">Nossos mais amados</h2>
+        <p class="section-sub">Formulações exclusivas para cada tipo de pele e cabelo.</p>
+      </div>
+      <div class="products-grid">
+
+        <div class="product-card">
+          <div class="img-placeholder product-img" aria-label="Foto do produto">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span>Produto 1</span>
+          </div>
+          <div class="product-info">
+            <div class="product-name">Sérum Facial</div>
+            <div class="product-desc">Hidratação profunda com extratos vegetais naturais</div>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <div class="img-placeholder product-img" aria-label="Foto do produto">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span>Produto 2</span>
+          </div>
+          <div class="product-info">
+            <div class="product-name">Máscara Capilar</div>
+            <div class="product-desc">Nutrição e brilho para todos os tipos de cabelo</div>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <div class="img-placeholder product-img" aria-label="Foto do produto">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span>Produto 3</span>
+          </div>
+          <div class="product-info">
+            <div class="product-name">Óleo Corporal</div>
+            <div class="product-desc">Blend de óleos vegetais para pele macia e nutrida</div>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <div class="img-placeholder product-img" aria-label="Foto do produto">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span>Produto 4</span>
+          </div>
+          <div class="product-info">
+            <div class="product-name">Esfoliante</div>
+            <div class="product-desc">Renovação celular com ingredientes naturais</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- VALORES -->
+  <section class="section" id="valores">
+    <div class="section-header">
+      <span class="section-label">Por que nos escolher</span>
+      <h2 class="section-title">Nosso compromisso</h2>
+      <p class="section-sub">Cada decisão que tomamos é guiada pelo respeito ao seu corpo e ao planeta.</p>
+    </div>
+    <div class="values-grid">
+      <div class="value-card">
+        <div class="value-icon">🌿</div>
+        <div class="value-name">Ingredientes naturais</div>
+        <div class="value-desc">Matérias-primas selecionadas de fontes sustentáveis, sem ingredientes sintéticos desnecessários.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">🐰</div>
+        <div class="value-name">Cruelty-free</div>
+        <div class="value-desc">Nenhum teste em animais em qualquer etapa da produção. Beleza ética, sempre.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">♻️</div>
+        <div class="value-name">Embalagens sustentáveis</div>
+        <div class="value-desc">Materiais recicláveis e reutilizáveis para reduzir o impacto ambiental.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">✋</div>
+        <div class="value-name">Produção artesanal</div>
+        <div class="value-desc">Cada produto é feito à mão em pequenos lotes para garantir qualidade e frescor.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section" id="contato">
+    <span class="section-label" style="color:rgba(255,255,255,.7)">Fale conosco</span>
+    <h2 class="section-title">Pronta para se cuidar<br>com a natureza?</h2>
+    <p class="section-sub">
+      Siga a gente no Instagram e descubra dicas, novidades e promoções exclusivas.
     </p>
-    <p class="cta">
-      <a href="/apresentacao-landings.html">Voltar à timeline do projeto</a>
-    </p>
-  </article>
+    <a href="https://www.instagram.com/cria.da.natureza" target="_blank" rel="noopener" class="btn-white">
+      Ver no Instagram
+    </a>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <span class="footer-brand">🌿 Cria da Natureza</span>
+    <nav class="footer-links">
+      <a href="#sobre">Sobre</a>
+      <a href="#produtos">Produtos</a>
+      <a href="#valores">Valores</a>
+    </nav>
+    <span>© 2025 Cria da Natureza · Cosméticos naturais &amp; veganos</span>
+  </footer>
+
 </body>
 </html>
