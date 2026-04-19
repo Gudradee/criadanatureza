@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Meu Catálogo{% endblock %}
+
+{% block topbar_left %}
+<div class="topbar-left">
+  <div>
+    <h1 class="page-title">Meu Catálogo</h1>
+    <span class="page-subtitle">Pré-visualização — como seus clientes vão ver</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block topbar_actions %}
+<div style="display:flex;gap:var(--sp-3);align-items:center">
+  {% if not qr_visivel %}
+  <button onclick="document.getElementById('qr-modal').style.display='flex'" class="btn btn-primary">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+    Publicar catálogo
+  </button>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+
+{# ── Modal QR Code ── #}
+<div id="qr-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center"
+     onclick="if(event.target===this)this.style.display='none'">
+  <div class="card card-padded" style="max-width:360px;width:100%;text-align:center;position:relative">
+    <button onclick="document.getElementById('qr-modal').style.display='none'"
+            style="position:absolute;top:var(--sp-3);right:var(--sp-3);background:none;border:none;cursor:pointer;color:var(--c-text-3);line-height:1">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+
+    <h2 style="font-size:var(--text-base);font-weight:600;margin-bottom:var(--sp-2)">QR Code do seu catálogo</h2>
+    <p style="font-size:var(--text-sm);color:var(--c-text-3);margin-bottom:var(--sp-5)">
+      Mostre este código para seus clientes finalizarem o pedido.
+    </p>
+
+    <img src="/meu-catalogo/qr.png" alt="QR Code"
+         style="width:200px;height:200px;border-radius:var(--r-md);border:1px solid var(--border-color);margin:0 auto var(--sp-5);display:block" />
+
+    <div style="background:var(--bg-subtle);border-radius:var(--r-sm);padding:var(--sp-3);margin-bottom:var(--sp-4);text-align:left">
+      <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:2px">Link do catálogo</p>
+      <p style="font-size:var(--text-xs);word-break:break-all;color:var(--c-teal);font-weight:500">{{ request.host_url }}loja?p={{ parceiro.id }}</p>
+    </div>
+
+    <a href="/meu-catalogo/qr.png" download="catalogo-qr.png" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Baixar QR Code
+    </a>
+  </div>
+</div>
+
+{# ── Banner de pré-visualização ── #}
+<div style="background:linear-gradient(135deg,var(--c-teal-light),#e0f2f1);border:1px solid var(--c-teal);border-radius:var(--r-lg);padding:var(--sp-4) var(--sp-5);margin-bottom:var(--sp-6);display:flex;align-items:center;gap:var(--sp-3)">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-teal)" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+  <p style="font-size:var(--text-sm);color:var(--c-teal);margin:0">
+    <strong>Pré-visualização:</strong> Este é exatamente o catálogo que seus clientes verão ao escanear o QR Code. Exibe apenas os produtos que você possui em estoque no momento.
+  </p>
+</div>
+
+{# ── Grid de produtos ── #}
+{% if not produtos %}
+<div class="card" style="text-align:center;padding:var(--sp-12)">
+  <div style="font-size:3rem;margin-bottom:var(--sp-3)">🌿</div>
+  <p style="font-weight:600;font-size:var(--text-base);margin-bottom:var(--sp-2)">Nenhum produto disponível</p>
+  <p style="color:var(--c-text-3);font-size:var(--text-sm)">Você ainda não tem produtos em estoque. Aguarde o envio da empresa.</p>
+</div>
+{% else %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--sp-5)">
+  {% for p in produtos %}
+  <div class="card" style="padding:var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-3);position:relative">
+
+    {# Badge de quantidade em mãos #}
+    {% set em_maos = estoque_map.get(p.id, 0) %}
+    <div style="position:absolute;top:var(--sp-3);right:var(--sp-3);background:var(--c-teal);color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:2px 8px;letter-spacing:.3px">
+      {{ em_maos }} un.
+    </div>
+
+    {% if p.imagem_url %}
+    <img src="{{ p.imagem_url }}" alt="{{ p.nome }}"
+         style="width:100%;height:160px;object-fit:cover;border-radius:var(--r-md);background:var(--bg-subtle)">
+    {% else %}
+    <div style="width:100%;height:160px;border-radius:var(--r-md);background:var(--bg-subtle);display:flex;align-items:center;justify-content:center;font-size:2.5rem">🌿</div>
+    {% endif %}
+
+    <div style="flex:1">
+      <p style="font-weight:600;font-size:var(--text-base);margin-bottom:var(--sp-1)">{{ p.nome }}</p>
+      {% if p.descricao %}
+      <p style="font-size:var(--text-xs);color:var(--c-text-3);line-height:1.4">{{ p.descricao[:80] }}{% if p.descricao|length > 80 %}…{% endif %}</p>
+      {% endif %}
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-top:var(--sp-2);border-top:1px solid var(--border-color)">
+      <span style="font-weight:700;font-size:var(--text-lg);color:var(--c-teal)">{{ p.preco_venda | brl }}</span>
+      <span style="font-size:var(--text-xs);color:var(--c-text-3)">{{ em_maos }} disponíveis</span>
+    </div>
+
+    {# Botão simulado (não funciona — apenas visual) #}
+    <div style="background:var(--bg-subtle);border-radius:var(--r-md);padding:var(--sp-2);text-align:center;font-size:var(--text-xs);color:var(--c-text-3);border:1px dashed var(--border-color)">
+      Clientes verão o botão "Adicionar ao carrinho" aqui
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# ── Solicitar devolução ── #}
+{% if produtos %}
+<div class="card card-padded" style="margin-top:var(--sp-6)">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-4)">
+    <div>
+      <h2 class="section-title" style="margin-bottom:4px">Solicitar devolução</h2>
+      <p style="font-size:var(--text-xs);color:var(--c-text-3)">Selecione os itens que deseja devolver. O administrador confirmará o recebimento e o estoque será restaurado.</p>
+    </div>
+    <button onclick="document.getElementById('form-devolucao').style.display=document.getElementById('form-devolucao').style.display==='none'?'block':'none'"
+            class="btn btn-ghost btn-sm" style="flex-shrink:0">
+      Solicitar devolução
+    </button>
+  </div>
+
+  <div id="form-devolucao" style="display:none">
+    <form method="POST" action="/meu-catalogo/solicitar-devolucao">
+      <div id="dev-linhas" style="display:flex;flex-direction:column;gap:var(--sp-2);margin-bottom:var(--sp-4)">
+        <div class="form-row">
+          <select class="form-select" name="produto_id" style="flex:3">
+            <option value="">Selecione o produto...</option>
+            {% for p in produtos %}
+            <option value="{{ p.id }}">{{ p.nome }} ({{ estoque_map.get(p.id, 0) }} em mãos)</option>
+            {% endfor %}
+          </select>
+          <input class="form-input" name="quantidade" type="number" min="1" placeholder="Qtd" style="width:90px" />
+        </div>
+      </div>
+      <button type="button" onclick="addDevLinha()"
+              style="width:100%;border:1px dashed var(--border-color);background:none;border-radius:var(--r-md);padding:var(--sp-2);color:var(--c-text-3);font-size:var(--text-xs);cursor:pointer;margin-bottom:var(--sp-4)">
+        + Adicionar outro produto
+      </button>
+      <div class="form-group">
+        <label class="form-label">Motivo da devolução</label>
+        <textarea class="form-textarea" name="motivo" rows="2" placeholder="Descreva o motivo da devolução..."></textarea>
+      </div>
+      <div style="display:flex;gap:var(--sp-3)">
+        <button type="submit" class="btn btn-primary">Enviar solicitação</button>
+        <button type="button" onclick="document.getElementById('form-devolucao').style.display='none'"
+                class="btn btn-ghost">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const PRODUTOS_NOMES_DEV = {
+  {% for p in produtos %}"{{ p.id }}": "{{ p.nome }} ({{ estoque_map.get(p.id, 0) }} em mãos)",{% endfor %}
+};
+function addDevLinha() {
+  const container = document.getElementById('dev-linhas');
+  const options = Object.entries(PRODUTOS_NOMES_DEV).map(([id, nome]) =>
+    `<option value="${id}">${nome}</option>`
+  ).join('');
+  const row = document.createElement('div');
+  row.className = 'form-row';
+  row.innerHTML = `
+    <select class="form-select" name="produto_id" style="flex:3">
+      <option value="">Selecione o produto...</option>
+      ${options}
+    </select>
+    <input class="form-input" name="quantidade" type="number" min="1" placeholder="Qtd" style="width:90px" />
+    <button type="button" onclick="this.parentElement.remove()"
+            style="background:none;border:none;cursor:pointer;color:var(--c-danger);padding:0 var(--sp-2);font-size:18px">&times;</button>
+  `;
+  container.appendChild(row);
+}
+</script>
+{% endif %}
+
+{% endblock %}

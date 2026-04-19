@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Meu Painel{% endblock %}
+
+{% block head %}
+<meta http-equiv="refresh" content="20">
+{% endblock %}
+
+{% block topbar_left %}
+<div class="topbar-left">
+  <div>
+    <h1 class="page-title">Meu Painel</h1>
+    <span class="page-subtitle">Visão geral das suas vendas e estoque</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{# ── Filtros de período ── #}
+<div class="card card-padded" style="margin-bottom:var(--sp-6)">
+  <form method="GET" action="/meu-painel" style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--sp-3)">
+    <div style="display:flex;gap:var(--sp-2);align-items:center">
+      <span style="font-size:var(--text-sm);font-weight:500;color:var(--text-secondary)">Período:</span>
+      {% for p, label in [('hoje','Hoje'),('semana','Esta semana'),('mes','Este mês'),('personalizado','Personalizado')] %}
+      <a href="/meu-painel?periodo={{ p }}"
+         class="btn btn-sm {% if periodo == p %}btn-primary{% else %}btn-ghost{% endif %}">
+        {{ label }}
+      </a>
+      {% endfor %}
+    </div>
+    {% if periodo == 'personalizado' %}
+    <div style="display:flex;gap:var(--sp-2);align-items:center;flex-wrap:wrap">
+      <input class="form-input" name="data_ini" type="date" value="{{ data_ini }}"
+             style="width:150px" required />
+      <span style="color:var(--text-muted);font-size:var(--text-sm)">até</span>
+      <input class="form-input" name="data_fim" type="date" value="{{ data_fim }}"
+             style="width:150px" required />
+      <input type="hidden" name="periodo" value="personalizado" />
+      <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+    </div>
+    {% endif %}
+  </form>
+</div>
+
+{# ── KPIs ── #}
+<div class="grid-3" style="margin-bottom:var(--sp-8)">
+
+  <div class="kpi-card" style="--kpi-accent:var(--c-teal);--kpi-icon-bg:var(--c-teal-light);--kpi-icon-color:var(--c-teal)">
+    <div class="kpi-header">
+      <span class="kpi-label">Em mãos (estoque atual)</span>
+      <div class="kpi-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      </div>
+    </div>
+    <div class="kpi-value">{{ em_maos }} un.</div>
+    <div class="kpi-footer">Recebido: {{ total_enviado }} un. · Vendido total: {{ qtd_vendida_total }} un.</div>
+  </div>
+
+  <div class="kpi-card" style="--kpi-accent:var(--c-green);--kpi-icon-bg:#f0faf5;--kpi-icon-color:#059669">
+    <div class="kpi-header">
+      <span class="kpi-label">Vendido no período selecionado</span>
+      <div class="kpi-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+      </div>
+    </div>
+    <div class="kpi-value">{{ qtd_vendida }} un.</div>
+    <div class="kpi-footer">{{ valor_vendido | brl }} · Total geral: {{ qtd_vendida_total }} un.</div>
+  </div>
+
+  <div class="kpi-card" style="--kpi-accent:#f59e0b;--kpi-icon-bg:#fffbeb;--kpi-icon-color:#d97706">
+    <div class="kpi-header">
+      <span class="kpi-label">Devolvido no período</span>
+      <div class="kpi-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      </div>
+    </div>
+    <div class="kpi-value">{{ qtd_devolvida }} un.</div>
+    <div class="kpi-footer">Unidades retornadas à empresa</div>
+  </div>
+
+</div>
+
+{# ── Produtos vendidos no período ── #}
+<div class="card card-padded">
+  <div class="section-header" style="margin-bottom:var(--sp-5)">
+    <h2 class="section-title">Produtos vendidos no período</h2>
+  </div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th style="text-align:center">Quantidade</th>
+          <th style="text-align:right">Valor total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if produtos_lista %}
+          {% for nome, dados in produtos_lista %}
+          <tr>
+            <td style="font-weight:500">{{ nome }}</td>
+            <td style="text-align:center">
+              <span class="badge" style="background:var(--c-teal-light);color:var(--c-teal)">{{ dados.quantidade }} un.</span>
+            </td>
+            <td style="text-align:right;font-weight:600;color:#059669">{{ dados.valor | brl }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="3" style="text-align:center;padding:var(--sp-8);color:var(--c-text-3)">
+            Nenhuma venda registrada neste período.
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

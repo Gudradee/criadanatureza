@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}{{ parceiro.nome }}{% endblock %}
+
+{% block head %}
+<script>
+  const PRODUTOS = {{ produtos_json | tojson }};
+</script>
+{% endblock %}
+
+{% block topbar_left %}
+<div class="topbar-left">
+  <div style="display:flex;align-items:center;gap:var(--sp-3)">
+    <a href="/parceiros" class="btn btn-ghost btn-sm btn-icon" title="Voltar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
+    <div>
+      <h1 class="page-title">{{ parceiro.nome }}</h1>
+      <span class="page-subtitle">
+        <span class="badge {% if parceiro.status == 'ativo' %}badge-teal{% endif %}">{{ parceiro.status }}</span>
+        {% if parceiro.telefone %} · {{ parceiro.telefone }}{% endif %}
+      </span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="/parceiros/{{ parceiro.id }}/editar" class="btn btn-secondary btn-sm">Editar</a>
+{% endblock %}
+
+{% block content %}
+
+{# ── KPIs ── #}
+<div class="grid-4" style="margin-bottom:var(--sp-8)">
+  <div class="kpi-card" style="--kpi-accent:var(--c-teal);--kpi-icon-bg:var(--c-teal-light);--kpi-icon-color:var(--c-teal)">
+    <div class="kpi-header">
+      <span class="kpi-label">Total enviado</span>
+      <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
+    </div>
+    <div class="kpi-value">{{ saldo.total_enviado }} un.</div>
+    <div class="kpi-footer">unidades enviadas ao parceiro</div>
+  </div>
+
+  <div class="kpi-card" style="--kpi-accent:var(--c-navy);--kpi-icon-bg:#eef2f7;--kpi-icon-color:var(--c-navy)">
+    <div class="kpi-header">
+      <span class="kpi-label">Em mãos</span>
+      <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8"/></svg></div>
+    </div>
+    <div class="kpi-value">{{ saldo.em_maos }} un.</div>
+    <div class="kpi-footer">{{ saldo.valor_em_maos | brl }} em mercadoria</div>
+  </div>
+
+  <div class="kpi-card" style="--kpi-accent:var(--c-green);--kpi-icon-bg:#f0faf5;--kpi-icon-color:#059669">
+    <div class="kpi-header">
+      <span class="kpi-label">Receita gerada</span>
+      <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+    </div>
+    <div class="kpi-value">{{ saldo.receita_total | brl }}</div>
+    <div class="kpi-footer">{{ saldo.total_vendas_caixa }} venda(s) · {{ saldo.desconto_total | brl }} em descontos</div>
+  </div>
+
+  <div class="kpi-card" style="--kpi-accent:var(--c-warning);--kpi-icon-bg:var(--c-warning-bg);--kpi-icon-color:var(--c-warning)">
+    <div class="kpi-header">
+      <span class="kpi-label">Devoluções</span>
+      <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg></div>
+    </div>
+    <div class="kpi-value">{{ saldo.total_devolvido }} un.</div>
+    <div class="kpi-footer">
+      {% if solicitacoes_pendentes %}
+      <span style="color:var(--c-warning);font-weight:600">{{ solicitacoes_pendentes|length }} pendente(s)</span>
+      {% else %}nenhuma pendente{% endif %}
+    </div>
+  </div>
+</div>
+
+{# ── Painel central: Envio + Devoluções pendentes ── #}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5);margin-bottom:var(--sp-8)">
+
+  {# Registrar envio #}
+  <div class="card card-padded">
+    <div style="margin-bottom:var(--sp-4)">
+      <h3 style="font-size:var(--text-base);font-weight:600;margin-bottom:var(--sp-1)">Registrar envio de produtos</h3>
+      <p style="font-size:var(--text-xs);color:var(--c-text-3)">
+        Selecione os produtos e quantidades. O estoque será deduzido e o catálogo do parceiro atualizado automaticamente.
+      </p>
+    </div>
+
+    <form method="POST" action="/parceiros/{{ parceiro.id }}/envio" id="form-envio">
+      <div id="envio-linhas">
+        {# linha gerada pelo JS #}
+      </div>
+
+      <button type="button" onclick="adicionarLinha()"
+              style="width:100%;border:1px dashed var(--border-color);background:none;border-radius:var(--r-md);padding:var(--sp-2);color:var(--c-text-3);font-size:var(--text-sm);cursor:pointer;margin-bottom:var(--sp-3);transition:all .15s"
+              onmouseover="this.style.borderColor='var(--c-teal)';this.style.color='var(--c-teal)'"
+              onmouseout="this.style.borderColor='var(--border-color)';this.style.color='var(--c-text-3)'">
+        + Adicionar produto
+      </button>
+
+      <div class="form-group">
+        <label class="form-label" style="font-size:var(--text-xs)">Observações (opcional)</label>
+        <input class="form-input" name="observacoes" placeholder="Ex: Lote de abril, produtos para evento..." />
+      </div>
+
+      <div style="background:var(--bg-subtle);border-radius:var(--r-sm);padding:var(--sp-3);margin-bottom:var(--sp-3);font-size:var(--text-xs);color:var(--c-text-3)">
+        <strong style="color:var(--text-secondary)">O que acontece ao confirmar:</strong><br>
+        · Estoque da empresa é deduzido<br>
+        · Produto é adicionado ao catálogo do parceiro<br>
+        · Histórico de envio é registrado
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Confirmar envio
+      </button>
+    </form>
+  </div>
+
+  {# Devoluções pendentes #}
+  <div class="card card-padded">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-4)">
+      <div>
+        <h3 style="font-size:var(--text-base);font-weight:600;margin-bottom:var(--sp-1)">Devoluções pendentes</h3>
+        <p style="font-size:var(--text-xs);color:var(--c-text-3)">Solicitações enviadas pelo parceiro aguardando confirmação.</p>
+      </div>
+      {% if solicitacoes_pendentes %}
+      <span style="background:var(--c-warning-bg);color:var(--c-warning);font-size:var(--text-xs);font-weight:700;border-radius:20px;padding:3px 10px">
+        {{ solicitacoes_pendentes|length }}
+      </span>
+      {% endif %}
+    </div>
+
+    {% if not solicitacoes_pendentes %}
+    <div style="text-align:center;padding:var(--sp-8);color:var(--c-text-3)">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:var(--sp-2);opacity:.4"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      <p style="font-size:var(--text-sm)">Nenhuma devolução pendente.</p>
+    </div>
+    {% else %}
+    <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+      {% for sol in solicitacoes_pendentes %}
+      <div style="border:1px solid var(--c-warning);border-radius:var(--r-md);padding:var(--sp-4);background:var(--c-warning-bg)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-2)">
+          <span style="font-size:var(--text-xs);color:var(--c-text-3)">{{ sol.criado_em.strftime('%d/%m/%Y %H:%M') if sol.criado_em else '—' }}</span>
+        </div>
+        {% for item in sol.itens %}
+        <div style="font-size:var(--text-sm);margin-bottom:2px">
+          <strong>{{ item.produto.nome if item.produto else '—' }}</strong> × {{ item.quantidade }} un.
+        </div>
+        {% endfor %}
+        {% if sol.motivo %}
+        <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-top:var(--sp-2);font-style:italic">Motivo: {{ sol.motivo }}</p>
+        {% endif %}
+        <div style="display:flex;gap:var(--sp-2);margin-top:var(--sp-3)">
+          <form method="POST" action="/parceiros/{{ parceiro.id }}/devolucao/{{ sol.id }}/confirmar" style="flex:1">
+            <button type="submit" class="btn btn-primary btn-sm" style="width:100%;justify-content:center;font-size:var(--text-xs)">
+              Confirmar recebimento
+            </button>
+          </form>
+          <form method="POST" action="/parceiros/{{ parceiro.id }}/devolucao/{{ sol.id }}/rejeitar"
+                onsubmit="return confirm('Rejeitar esta solicitação?')">
+            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--c-danger)">Rejeitar</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Histórico de movimentações ── #}
+<div class="card card-padded">
+  <div class="section-header" style="margin-bottom:var(--sp-5)">
+    <h2 class="section-title">Histórico de movimentações</h2>
+  </div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Data</th>
+          <th>Produtos</th>
+          <th style="text-align:right">Valor</th>
+          <th>Obs.</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if historico %}
+          {% for h in historico %}
+          <tr>
+            <td>
+              {% if h.tipo == 'envio' %}
+              <span class="badge badge-teal">Envio</span>
+              {% elif h.tipo == 'venda_final' %}
+              <span class="badge" style="background:#f0faf5;color:#059669">Venda</span>
+              {% else %}
+              <span class="badge badge-warning">Devolução</span>
+              {% endif %}
+            </td>
+            <td style="font-size:var(--text-xs);color:var(--c-text-3);white-space:nowrap">
+              {{ h.data[:10] if h.data else '—' }}
+            </td>
+            <td>
+              {% for item in h.itens %}
+              <div style="font-size:var(--text-xs)">
+                {{ item.produto }} × {{ item.quantidade }}
+                {% if h.tipo == 'venda_final' and item.desconto > 0 %}
+                <span style="color:var(--c-danger);font-size:10px">-{{ item.desconto | brl }}</span>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </td>
+            <td style="text-align:right;white-space:nowrap">
+              {% if h.tipo == 'venda_final' %}
+              <div style="font-size:var(--text-sm);font-weight:600;color:#059669">{{ h.total_liquido | brl }}</div>
+              {% if h.desconto > 0 %}
+              <div style="font-size:10px;color:var(--c-danger)">-{{ h.desconto | brl }} desc.</div>
+              {% endif %}
+              {% elif h.tipo == 'envio' %}
+              <div style="font-size:var(--text-sm);color:var(--c-text-3)">{{ h.total | brl }}</div>
+              {% else %}—{% endif %}
+            </td>
+            <td style="font-size:var(--text-xs);color:var(--c-text-3);max-width:180px">
+              {% if h.tipo == 'venda_final' and h.forma_pagamento %}
+              <span class="badge" style="background:var(--bg-subtle);margin-bottom:2px;display:inline-block">{{ h.forma_pagamento }}</span><br>
+              {% endif %}
+              {{ h.observacoes or '—' }}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="5" style="text-align:center;padding:var(--sp-8);color:var(--c-text-3)">Nenhuma movimentação registrada.</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let linhaCount = 0;
+
+function adicionarLinha() {
+  const container = document.getElementById('envio-linhas');
+  const idx = linhaCount++;
+  const options = PRODUTOS.map(p =>
+    `<option value="${p.id}" data-preco="${p.preco_venda}" data-estoque="${p.quantidade}">${p.nome} (${p.quantidade} em estoque)</option>`
+  ).join('');
+
+  const div = document.createElement('div');
+  div.id = `linha-${idx}`;
+  div.style.cssText = 'background:var(--bg-subtle);border-radius:var(--r-md);padding:var(--sp-3);margin-bottom:var(--sp-2)';
+  div.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-2)">
+      <span style="font-size:var(--text-xs);font-weight:500;color:var(--text-secondary)">Produto ${idx + 1}</span>
+      <button type="button" onclick="removerLinha(${idx})"
+              style="background:none;border:none;cursor:pointer;color:var(--c-text-3);font-size:18px;line-height:1;padding:0">&times;</button>
+    </div>
+    <div class="form-row" style="margin-bottom:var(--sp-2)">
+      <select class="form-select" name="produto_id" onchange="preencherPreco(this, ${idx})" style="flex:3">
+        <option value="">Selecione o produto...</option>
+        ${options}
+      </select>
+      <div style="position:relative;flex:1">
+        <input class="form-input" name="quantidade" type="number" min="1" placeholder="Qtd"
+               id="qtd-${idx}" oninput="calcularSubtotal(${idx})" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div style="flex:1">
+        <label style="font-size:10px;color:var(--c-text-3);display:block;margin-bottom:2px">Preço unitário (R$)</label>
+        <input class="form-input" name="preco_unitario" type="number" step="0.01" min="0"
+               id="preco-${idx}" oninput="calcularSubtotal(${idx})" placeholder="0,00" />
+      </div>
+      <div style="flex:1">
+        <label style="font-size:10px;color:var(--c-text-3);display:block;margin-bottom:2px">Subtotal</label>
+        <div id="subtotal-${idx}" style="font-size:var(--text-sm);font-weight:600;color:var(--c-teal);padding:var(--sp-2) var(--sp-3);background:#fff;border-radius:var(--r-md);border:1px solid var(--border-color)">R$ 0,00</div>
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+}
+
+function removerLinha(idx) {
+  const el = document.getElementById(`linha-${idx}`);
+  if (el) el.remove();
+}
+
+function preencherPreco(select, idx) {
+  const opt = select.options[select.selectedIndex];
+  const preco = parseFloat(opt.dataset.preco || 0);
+  const precoInput = document.getElementById(`preco-${idx}`);
+  if (precoInput) precoInput.value = preco.toFixed(2);
+  calcularSubtotal(idx);
+}
+
+function calcularSubtotal(idx) {
+  const qty = parseFloat(document.getElementById(`qtd-${idx}`)?.value || 0);
+  const preco = parseFloat(document.getElementById(`preco-${idx}`)?.value || 0);
+  const el = document.getElementById(`subtotal-${idx}`);
+  if (el) {
+    const total = qty * preco;
+    el.textContent = 'R$ ' + total.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+}
+
+// Inicia com uma linha
+adicionarLinha();
+</script>
+{% endblock %}

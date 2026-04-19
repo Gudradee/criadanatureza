@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Estoque{% endblock %}
+
+{% block page_title %}Estoque{% endblock %}
+{% block page_subtitle %}{{ produtos | length }} produto(s){% endblock %}
+
+{% block topbar_actions %}
+<a href="/estoque/novo" class="btn btn-primary btn-sm">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Novo produto
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Barra de busca -->
+<div class="card card-padded" style="margin-bottom:var(--sp-5)">
+  <form method="GET" action="/estoque">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="search-bar" style="flex:1;max-width:320px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="form-input" name="busca" placeholder="Buscar produto..." type="search" value="{{ busca or '' }}" />
+        </div>
+        <select class="form-select" name="categoria_id" style="width:180px;height:40px" onchange="this.form.submit()">
+          <option value="">Todas categorias</option>
+          {% for cat in categorias %}
+          <option value="{{ cat.id }}" {% if categoria_id == cat.id %}selected{% endif %}>{{ cat.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="toolbar-right">
+        <button type="submit" class="btn btn-secondary btn-sm">Buscar</button>
+        {% if busca or categoria_id %}
+        <a href="/estoque" class="btn btn-ghost btn-sm">Limpar</a>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Tabela de produtos -->
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>Categoria</th>
+        <th>Preço custo</th>
+        <th>Preço venda</th>
+        <th>Estoque</th>
+        <th>Status</th>
+        <th style="width:160px">Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if produtos %}
+        {% for p in produtos %}
+        <tr>
+          <td>
+            <div style="font-weight:600;font-size:var(--text-sm)">{{ p.nome }}</div>
+            {% if p.descricao %}<div style="font-size:var(--text-xs);color:var(--c-text-3)">{{ p.descricao[:60] }}{% if p.descricao|length > 60 %}…{% endif %}</div>{% endif %}
+          </td>
+          <td>
+            {% if p.categoria %}
+            <span class="category-tag">{{ p.categoria.nome }}</span>
+            {% else %}
+            <span style="color:var(--c-text-3);font-size:var(--text-sm)">—</span>
+            {% endif %}
+          </td>
+          <td>{{ p.preco_custo | brl }}</td>
+          <td>{{ p.preco_venda | brl }}</td>
+          <td>
+            <span style="font-weight:600">{{ p.quantidade }}</span>
+            <span style="font-size:var(--text-xs);color:var(--c-text-3)"> / mín {{ p.estoque_minimo }}</span>
+          </td>
+          <td>
+            {% if p.quantidade <= p.estoque_minimo %}
+            <span class="badge badge-warning">Baixo</span>
+            {% else %}
+            <span class="badge badge-teal">OK</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:var(--sp-2)">
+              <a href="/estoque/{{ p.id }}/editar" class="btn btn-ghost btn-sm btn-icon" title="Editar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </a>
+              <a href="/estoque/{{ p.id }}/ajuste" class="btn btn-ghost btn-sm btn-icon" title="Ajustar estoque">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </a>
+              <form method="POST" action="/estoque/{{ p.id }}/deletar" onsubmit="return confirm('Excluir {{ p.nome }}?')" style="display:inline">
+                <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Excluir" style="color:var(--c-danger)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      {% else %}
+      <tr>
+        <td colspan="7" style="text-align:center;padding:var(--sp-8);color:var(--c-text-3)">
+          Nenhum produto encontrado.
+          <a href="/estoque/novo" style="color:var(--c-teal)">Criar produto</a>
+        </td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

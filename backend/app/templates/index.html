@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}{{ hoje }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/estoque/novo" class="btn btn-primary btn-sm">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Novo produto
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- KPIs -->
+<section class="page-section">
+  <div class="grid-4">
+    <div class="kpi-card" style="--kpi-accent:var(--c-green);--kpi-icon-bg:#f0faf5;--kpi-icon-color:#059669">
+      <div class="kpi-header">
+        <span class="kpi-label">Faturamento do mês</span>
+        <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+      </div>
+      <div class="kpi-value">{{ financeiro.entradas_mes | brl }}</div>
+      <div class="kpi-footer">Receita bruta de vendas</div>
+    </div>
+
+    <div class="kpi-card" style="--kpi-accent:var(--c-danger);--kpi-icon-bg:#fef2f2;--kpi-icon-color:#dc2626">
+      <div class="kpi-header">
+        <span class="kpi-label">Custo de produção</span>
+        <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div>
+      </div>
+      <div class="kpi-value">{{ financeiro.custo_prod_mes | brl }}</div>
+      <div class="kpi-footer">
+        {% if financeiro.outras_saidas_mes > 0 %}
+        + {{ financeiro.outras_saidas_mes | brl }} outras despesas
+        {% else %}Fabricação + insumos{% endif %}
+      </div>
+    </div>
+
+    <div class="kpi-card" style="--kpi-accent:var(--c-teal);--kpi-icon-bg:var(--c-teal-light);--kpi-icon-color:var(--c-teal)">
+      <div class="kpi-header">
+        <span class="kpi-label">Lucro real</span>
+        <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+      </div>
+      <div class="kpi-value" style="color:{% if financeiro.lucro_mes >= 0 %}var(--c-teal){% else %}var(--c-danger){% endif %}">
+        {{ financeiro.lucro_mes | brl }}
+      </div>
+      <div class="kpi-footer">Faturamento − todas as despesas</div>
+    </div>
+
+    <div class="kpi-card" style="--kpi-accent:var(--c-navy);--kpi-icon-bg:#eef2f7;--kpi-icon-color:var(--c-navy)">
+      <div class="kpi-header">
+        <span class="kpi-label">Itens em estoque</span>
+        <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
+      </div>
+      <div class="kpi-value">{{ estoque.total_itens }}</div>
+      <div class="kpi-footer">{{ estoque.total_produtos }} produtos cadastrados</div>
+    </div>
+  </div>
+</section>
+
+<!-- Alertas + Fluxo mensal -->
+<div style="display:grid;grid-template-columns:1fr 340px;gap:var(--sp-5);margin-bottom:var(--sp-8)">
+
+  <!-- Fluxo mensal -->
+  <div class="card card-padded">
+    <div class="section-header" style="margin-bottom:var(--sp-5)">
+      <h2 class="section-title">Fluxo de caixa</h2>
+      <span class="badge badge-teal">Últimos 6 meses</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Mês</th>
+            <th style="text-align:right">Faturamento</th>
+            <th style="text-align:right">Custo prod.</th>
+            <th style="text-align:right">Outras desp.</th>
+            <th style="text-align:right;font-weight:600">Lucro real</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in fluxo_mensal %}
+          <tr>
+            <td>{{ m.mes }}</td>
+            <td style="text-align:right;color:#059669">{{ m.entradas | brl }}</td>
+            <td style="text-align:right;color:#dc2626">{{ m.custo_prod | brl }}</td>
+            <td style="text-align:right;color:#d97706">{{ m.outras | brl }}</td>
+            <td style="text-align:right;font-weight:700;color:{% if m.lucro >= 0 %}var(--c-teal){% else %}var(--c-danger){% endif %}">{{ m.lucro | brl }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" style="text-align:center;color:var(--c-text-3)">Sem movimentações</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Alertas de estoque -->
+  <div class="card card-padded" style="display:flex;flex-direction:column;gap:var(--sp-4)">
+    <div class="section-header" style="margin-bottom:0">
+      <h2 class="section-title">Alertas de estoque</h2>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:var(--sp-3);flex:1">
+      {% if estoque.alertas %}
+        {% for alerta in estoque.alertas %}
+        <div class="alert alert-warning" style="padding:var(--sp-3) var(--sp-4)">
+          <div>
+            <div style="font-size:var(--text-sm);font-weight:600">{{ alerta.nome }}</div>
+            <div style="font-size:var(--text-xs);margin-top:2px">
+              {{ alerta.quantidade }} unidades · mínimo {{ alerta.estoque_minimo }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="font-size:var(--text-sm);color:var(--c-text-3);text-align:center;padding:var(--sp-5)">
+          Nenhum alerta no momento.
+        </p>
+      {% endif %}
+    </div>
+    <a href="/estoque" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center">Ver estoque completo</a>
+  </div>
+</div>
+
+<!-- Parceiros ativos -->
+<section class="page-section">
+  <div class="section-header">
+    <h2 class="section-title">Parceiros ativos</h2>
+    <a href="/parceiros" class="btn btn-ghost btn-sm">Ver todos</a>
+  </div>
+  {% if parceiros %}
+  <div class="grid-3">
+    {% for p in parceiros %}
+    <a href="/parceiros/{{ p.id }}" class="card card-padded" style="text-decoration:none;display:block">
+      <div style="display:flex;align-items:center;gap:var(--sp-3)">
+        <div class="avatar">{{ p.nome[0] | upper }}</div>
+        <div>
+          <div style="font-weight:600;font-size:var(--text-sm)">{{ p.nome }}</div>
+          {% if p.telefone %}<div style="font-size:var(--text-xs);color:var(--c-text-3)">{{ p.telefone }}</div>{% endif %}
+        </div>
+        <span class="badge {% if p.status == 'ativo' %}badge-teal{% else %}badge{% endif %}" style="margin-left:auto">
+          {{ p.status }}
+        </span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="color:var(--c-text-3);font-size:var(--text-sm)">Nenhum parceiro cadastrado.</p>
+  {% endif %}
+</section>
+{% endblock %}

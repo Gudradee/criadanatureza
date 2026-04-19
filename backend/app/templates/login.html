@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entrar — Cria da Natureza</title>
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/components.css" />
+  <style>
+    body {
+      background: var(--c-navy);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-card {
+      background: var(--c-surface);
+      border-radius: var(--r-xl);
+      padding: var(--sp-10) var(--sp-8);
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 24px 64px rgba(0,0,0,.3);
+    }
+    .login-logo {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      margin-bottom: var(--sp-8);
+      justify-content: center;
+    }
+    .login-logo-icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, var(--c-teal), var(--c-green));
+      border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .login-title {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--c-text-1);
+    }
+    .login-sub {
+      font-size: var(--text-xs);
+      color: var(--c-text-3);
+      display: block;
+    }
+    .login-heading {
+      font-size: var(--text-md);
+      font-weight: 600;
+      color: var(--c-text-1);
+      margin-bottom: var(--sp-2);
+      text-align: center;
+    }
+    .login-desc {
+      font-size: var(--text-sm);
+      color: var(--c-text-3);
+      text-align: center;
+      margin-bottom: var(--sp-6);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">🌿</div>
+      <div>
+        <span class="login-title">CDN</span>
+        <span class="login-sub">Cria da Natureza</span>
+      </div>
+    </div>
+
+    <p class="login-heading">Acesso ao painel</p>
+    <p class="login-desc">Entre com suas credenciais para continuar.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }}" style="margin-bottom:var(--sp-4)">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="/login" autocomplete="off">
+      <div class="form-group">
+        <label class="form-label">Usuário</label>
+        <input class="form-input" type="text" name="username"
+               autofocus autocomplete="username"
+               placeholder="seu.usuario" required />
+      </div>
+      <div class="form-group" style="margin-bottom:var(--sp-6)">
+        <label class="form-label">Senha</label>
+        <input class="form-input" type="password" name="senha"
+               autocomplete="current-password"
+               placeholder="••••••••" required />
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;padding:var(--sp-3)">
+        Entrar
+      </button>
+    </form>
+  </div>
+</body>
+</html>

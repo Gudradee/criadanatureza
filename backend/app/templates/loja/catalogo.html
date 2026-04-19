@@ -1,0 +1,113 @@
+{% extends "loja/base_loja.html" %}
+{% block title %}Catálogo{% endblock %}
+
+{% block head %}
+<style>
+  .produto-card { padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-3); position: relative; transition: box-shadow .15s; }
+  .produto-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+  .btn-add { flex: 1; font-size: .88rem; transition: all .15s; }
+  .btn-add.adicionado { background: #059669 !important; }
+
+  /* Barra flutuante do carrinho */
+  #cart-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: #fff;
+    border-top: 2px solid var(--color-primary);
+    padding: var(--sp-4) var(--sp-6);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    z-index: 100;
+    box-shadow: 0 -4px 20px rgba(0,0,0,.12);
+    transform: translateY(100%);
+    transition: transform .25s ease;
+  }
+  #cart-bar.visible { transform: translateY(0); }
+  body { padding-bottom: 90px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom:var(--sp-6);font-size:1.3rem;color:var(--color-text)">Nossos Produtos</h2>
+
+{% if not produtos %}
+  <div class="card" style="text-align:center;padding:var(--sp-8)">
+    <p style="color:var(--color-text-muted)">Nenhum produto disponível no momento.</p>
+  </div>
+{% else %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--sp-5)">
+  {% for produto in produtos %}
+  <div class="card produto-card" id="card-{{ produto.id }}">
+    {% if produto.imagem_url %}
+    <img src="{{ produto.imagem_url }}" alt="{{ produto.nome }}"
+         style="width:100%;height:160px;object-fit:cover;border-radius:var(--radius);background:var(--color-surface-2)">
+    {% else %}
+    <div style="width:100%;height:160px;border-radius:var(--radius);background:var(--color-surface-2);display:flex;align-items:center;justify-content:center;font-size:2.5rem">🌿</div>
+    {% endif %}
+
+    <div style="flex:1">
+      <p style="font-weight:600;font-size:1rem;margin-bottom:var(--sp-1)">{{ produto.nome }}</p>
+      {% if produto.descricao %}
+      <p style="font-size:.8rem;color:var(--color-text-muted);line-height:1.4">{{ produto.descricao[:80] }}{% if produto.descricao|length > 80 %}…{% endif %}</p>
+      {% endif %}
+    </div>
+
+    {% set disp = em_maos_map.get(produto.id, produto.quantidade) if parceiro else produto.quantidade %}
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span style="font-weight:700;font-size:1.1rem;color:var(--color-primary)">{{ produto.preco_venda | brl }}</span>
+      <span style="font-size:.75rem;color:var(--color-text-muted)">{{ disp }} disponíve{% if disp == 1 %}l{% else %}is{% endif %}</span>
+    </div>
+
+    {% set no_carrinho = carrinho.get(produto.id|string, 0) %}
+
+    <form action="/loja/carrinho/adicionar" method="post" style="display:flex;gap:var(--sp-2)"
+          onsubmit="marcarAdicionado({{ produto.id }})">
+      <input type="hidden" name="produto_id" value="{{ produto.id }}">
+      <input type="number" name="quantidade" value="1" min="1" max="{{ disp }}"
+             id="qty-{{ produto.id }}"
+             style="width:60px;padding:var(--sp-1) var(--sp-2);border:1px solid var(--color-border);border-radius:var(--radius);background:var(--color-surface);color:var(--color-text);font-size:.9rem;text-align:center">
+      <button type="submit" class="btn btn-primary btn-add" id="btn-{{ produto.id }}">
+        {% if no_carrinho > 0 %}✓ No carrinho ({{ no_carrinho }}){% else %}Adicionar{% endif %}
+      </button>
+    </form>
+
+    {% if no_carrinho > 0 %}
+    <div style="text-align:center;font-size:.75rem;color:#059669;font-weight:500;margin-top:-var(--sp-1)">
+      ✓ {{ no_carrinho }} no carrinho
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# Barra flutuante do carrinho #}
+<div id="cart-bar" class="{% if total_itens > 0 %}visible{% endif %}">
+  <div style="display:flex;align-items:center;gap:var(--sp-3)">
+    <span style="font-size:1.5rem">🛒</span>
+    <div>
+      <p style="font-weight:700;font-size:1rem;margin:0;color:var(--color-text)">
+        <span id="cart-count">{{ total_itens }}</span> ite{% if total_itens == 1 %}m{% else %}ns{% endif %} no carrinho
+      </p>
+      <p style="font-size:.8rem;color:var(--color-text-muted);margin:0">Pronto para finalizar?</p>
+    </div>
+  </div>
+  <a href="/loja/carrinho" class="btn btn-primary" style="padding:var(--sp-2) var(--sp-6);font-size:1rem;font-weight:700">
+    Ir para o carrinho →
+  </a>
+</div>
+
+<script>
+function marcarAdicionado(produtoId) {
+  const btn = document.getElementById('btn-' + produtoId);
+  if (btn) {
+    btn.classList.add('adicionado');
+    btn.textContent = '✓ Adicionado!';
+  }
+  // Mostra a barra do carrinho imediatamente (sem esperar reload)
+  document.getElementById('cart-bar').classList.add('visible');
+}
+</script>
+{% endblock %}

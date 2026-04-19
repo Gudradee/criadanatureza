@@ -1,0 +1,5 @@
+flask==3.0.3
+sqlalchemy==2.0.35
+qrcode[pil]==7.4.2
+pillow==10.4.0
+python-dotenv==1.0.1

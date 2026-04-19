@@ -1,0 +1,62 @@
+{% extends "loja/base_loja.html" %}
+{% block title %}Seu Pedido{% endblock %}
+{% block header_right %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:480px;margin:0 auto;padding:var(--sp-7);text-align:center">
+
+  {% if expirado %}
+    <div style="font-size:2.5rem;margin-bottom:var(--sp-3)">⏰</div>
+    <h2 style="margin-bottom:var(--sp-3);color:var(--color-danger)">Pedido expirado</h2>
+    <p style="color:var(--color-text-muted);margin-bottom:var(--sp-5)">
+      Este pedido expirou. Retorne à loja e monte um novo carrinho.
+    </p>
+    <a href="/loja" class="btn btn-primary">Voltar à loja</a>
+
+  {% elif pre_venda.status == "confirmada" %}
+    <div style="font-size:2.5rem;margin-bottom:var(--sp-3)">✅</div>
+    <h2 style="margin-bottom:var(--sp-3)">Pedido confirmado!</h2>
+    <p style="color:var(--color-text-muted)">Este pedido já foi processado pelo caixa.</p>
+
+  {% elif pre_venda.status == "cancelada" %}
+    <div style="font-size:2.5rem;margin-bottom:var(--sp-3)">❌</div>
+    <h2 style="margin-bottom:var(--sp-3);color:var(--color-danger)">Pedido cancelado</h2>
+    <p style="color:var(--color-text-muted);margin-bottom:var(--sp-5)">Este pedido foi cancelado.</p>
+    <a href="/loja" class="btn btn-primary">Voltar à loja</a>
+
+  {% else %}
+    <div style="font-size:2.5rem;margin-bottom:var(--sp-3)">🛒</div>
+    <h2 style="margin-bottom:var(--sp-2)">Seu pedido está pronto!</h2>
+    <p style="color:var(--color-text-muted);margin-bottom:var(--sp-5);font-size:.9rem">
+      Mostre este QR Code ao caixa para finalizar sua compra.
+    </p>
+
+    <div style="background:#fff;padding:var(--sp-4);border-radius:var(--radius);display:inline-block;margin-bottom:var(--sp-5)">
+      <img src="/loja/pedido/{{ pre_venda.token }}/qr.png" alt="QR Code do pedido"
+           style="width:200px;height:200px;display:block">
+    </div>
+
+    <div style="background:var(--color-surface-2);border-radius:var(--radius);padding:var(--sp-3) var(--sp-4);margin-bottom:var(--sp-4);text-align:left">
+      <p style="font-size:.75rem;color:var(--color-text-muted);margin-bottom:var(--sp-1)">Código do pedido</p>
+      <code style="font-size:.8rem;word-break:break-all">{{ pre_venda.token }}</code>
+    </div>
+
+    {% if pre_venda.expira_em %}
+    <p style="font-size:.8rem;color:var(--color-text-muted)">
+      Válido até {{ pre_venda.expira_em.strftime("%H:%M") }}
+    </p>
+    {% endif %}
+
+    <div style="margin-top:var(--sp-5);border-top:1px solid var(--color-border);padding-top:var(--sp-4)">
+      <p style="font-size:.8rem;color:var(--color-text-muted);margin-bottom:var(--sp-3)">Resumo do pedido</p>
+      {% for item in pre_venda.itens %}
+      <div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:var(--sp-1)">
+        <span>{{ item.produto.nome }} × {{ item.quantidade }}</span>
+        <span>{{ (item.preco_ref * item.quantidade) | brl }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

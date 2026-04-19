@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Pedido #{{ pre_venda.token[:8] }}{% endblock %}
+{% block page_title %}Pedido {% endblock %}
+{% block page_subtitle %}{{ pre_venda.token[:8] }}… — {{ pre_venda.status }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/caixa" class="btn">← Voltar</a>
+{% endblock %}
+
+{% block content %}
+
+{% if tem_problema %}
+<div class="alert alert-warning" style="margin-bottom:var(--sp-5)">
+  ⚠️ Um ou mais itens têm estoque insuficiente. A venda não pode ser confirmada até que o estoque seja corrigido.
+</div>
+{% endif %}
+
+<form action="/caixa/pedido/{{ pre_venda.token }}/confirmar" method="post">
+
+  <div class="card" style="margin-bottom:var(--sp-5)">
+    <div style="padding:var(--sp-5);border-bottom:1px solid var(--color-border)">
+      <h3 style="font-size:1rem;font-weight:600;margin-bottom:0">Itens do pedido</h3>
+    </div>
+    <table class="table" style="width:100%">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th style="text-align:center">Qtd</th>
+          <th style="text-align:right">Preço unit.</th>
+          <th style="text-align:right">Desconto unit. (R$)</th>
+          <th style="text-align:right">Subtotal</th>
+          <th style="text-align:center">Estoque</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in itens %}
+      <tr {% if not row.estoque_ok %}style="background:rgba(239,68,68,.06)"{% endif %}>
+        <td style="font-weight:500">{{ row.produto.nome }}</td>
+        <td style="text-align:center">{{ row.item.quantidade }}</td>
+        <td style="text-align:right">{{ row.produto.preco_venda | brl }}</td>
+        <td style="text-align:right">
+          <input type="number" name="desconto_{{ row.item.produto_id }}"
+                 value="0" min="0" max="{{ row.produto.preco_venda }}" step="0.01"
+                 style="width:90px;padding:4px 8px;border:1px solid var(--color-border);border-radius:var(--radius);background:var(--color-surface);color:var(--color-text);text-align:right">
+        </td>
+        <td style="text-align:right;font-weight:600">{{ row.subtotal | brl }}</td>
+        <td style="text-align:center">
+          {% if row.estoque_ok %}
+            <span style="color:var(--color-success);font-size:.8rem">✔ {{ row.produto.quantidade }}</span>
+          {% else %}
+            <span style="color:var(--color-danger);font-size:.8rem">✘ {{ row.produto.quantidade }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="font-weight:700;font-size:1rem">
+          <td colspan="4" style="text-align:right;padding:var(--sp-4)">Total bruto estimado:</td>
+          <td style="text-align:right;padding:var(--sp-4)">{{ total_bruto | brl }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="card" style="padding:var(--sp-5);margin-bottom:var(--sp-5)">
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:var(--sp-4)">Dados do pagamento</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
+      <div>
+        <label style="font-size:.85rem;color:var(--color-text-muted);display:block;margin-bottom:var(--sp-1)">Forma de pagamento</label>
+        <select name="forma_pagamento"
+                style="width:100%;padding:var(--sp-2) var(--sp-3);border:1px solid var(--color-border);border-radius:var(--radius);background:var(--color-surface);color:var(--color-text);font-size:.9rem">
+          <option value="">— selecione —</option>
+          <option>Dinheiro</option>
+          <option>Pix</option>
+          <option>Débito</option>
+          <option>Crédito</option>
+          <option>Misto</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:.85rem;color:var(--color-text-muted);display:block;margin-bottom:var(--sp-1)">Observações</label>
+        <input type="text" name="observacoes" placeholder="Opcional…"
+               style="width:100%;padding:var(--sp-2) var(--sp-3);border:1px solid var(--color-border);border-radius:var(--radius);background:var(--color-surface);color:var(--color-text);font-size:.9rem">
+      </div>
+    </div>
+  </div>
+
+  <!-- Totais dinâmicos -->
+  <div class="card" style="padding:var(--sp-4) var(--sp-5);margin-bottom:var(--sp-5);background:var(--bg-subtle)">
+    <div style="display:flex;justify-content:flex-end;gap:var(--sp-8);font-size:var(--text-sm)">
+      <span>Bruto: <strong id="total-bruto">{{ total_bruto | brl }}</strong></span>
+      <span>Desconto: <strong id="total-desconto" style="color:#dc2626">R$ 0,00</strong></span>
+      <span>Líquido: <strong id="total-liquido" style="color:#059669;font-size:var(--text-md)">{{ total_bruto | brl }}</strong></span>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;gap:var(--sp-3)">
+    <a href="/caixa" class="btn">Cancelar</a>
+    <button type="submit" class="btn btn-primary"
+            {% if tem_problema %}disabled style="opacity:.5;cursor:not-allowed"{% endif %}>
+      ✔ Confirmar venda
+    </button>
+  </div>
+
+</form>
+
+<script>
+const ITENS = {
+  {% for row in itens %}
+  "{{ row.item.produto_id }}": { preco: {{ row.produto.preco_venda }}, qty: {{ row.item.quantidade }} },
+  {% endfor %}
+};
+
+function recalcular() {
+  let bruto = 0, desconto = 0, liquido = 0;
+  for (const [pid, info] of Object.entries(ITENS)) {
+    const inp = document.querySelector(`input[name="desconto_${pid}"]`);
+    const desc = inp ? Math.min(Math.max(parseFloat(inp.value) || 0, 0), info.preco) : 0;
+    bruto    += info.preco * info.qty;
+    desconto += desc * info.qty;
+    liquido  += (info.preco - desc) * info.qty;
+    // Atualiza subtotal da linha
+    const subEl = inp ? inp.closest('tr').querySelector('td:nth-child(5)') : null;
+    if (subEl) subEl.textContent = 'R$ ' + (info.preco - desc).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+  const fmt = v => 'R$ ' + v.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  document.getElementById('total-bruto').textContent    = fmt(bruto);
+  document.getElementById('total-desconto').textContent = fmt(desconto);
+  document.getElementById('total-liquido').textContent  = fmt(liquido);
+}
+
+document.querySelectorAll('input[name^="desconto_"]').forEach(inp => {
+  inp.addEventListener('input', recalcular);
+});
+</script>
+{% endblock %}
