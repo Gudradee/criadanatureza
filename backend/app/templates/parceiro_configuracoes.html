@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Configurações{% endblock %}
+
+{% block topbar_left %}
+<div class="topbar-left">
+  <div>
+    <h1 class="page-title">Configurações</h1>
+    <span class="page-subtitle">Suas informações de cadastro</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:600px">
+
+  <div class="card card-padded">
+    <h2 class="section-title" style="margin-bottom:var(--sp-6)">Meus dados</h2>
+
+    <div style="display:flex;flex-direction:column;gap:var(--sp-5)">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4) var(--sp-6)">
+
+        <div>
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:500">Nome</p>
+          <p style="font-size:var(--text-base);font-weight:600">{{ parceiro.nome }}</p>
+        </div>
+
+        <div>
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:500">Status</p>
+          {% if parceiro.status == 'ativo' %}
+          <span class="badge" style="background:#f0faf5;color:#059669;font-size:var(--text-xs);padding:4px 10px">Ativo</span>
+          {% else %}
+          <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:var(--text-xs);padding:4px 10px">Inativo</span>
+          {% endif %}
+        </div>
+
+        {% if parceiro.contato %}
+        <div>
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:500">Contato</p>
+          <p style="font-size:var(--text-sm)">{{ parceiro.contato }}</p>
+        </div>
+        {% endif %}
+
+        {% if parceiro.telefone %}
+        <div>
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:500">Telefone / WhatsApp</p>
+          <p style="font-size:var(--text-sm)">{{ parceiro.telefone }}</p>
+        </div>
+        {% endif %}
+
+        {% if parceiro.email %}
+        <div>
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:500">E-mail</p>
+          <p style="font-size:var(--text-sm)">{{ parceiro.email }}</p>
+        </div>
+        {% endif %}
+
+        <div>
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:500">Parceiro desde</p>
+          <p style="font-size:var(--text-sm)">{{ parceiro.criado_em.strftime('%d/%m/%Y') if parceiro.criado_em else '—' }}</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div style="margin-top:var(--sp-6);padding-top:var(--sp-5);border-top:1px solid var(--border-color)">
+      <p style="font-size:var(--text-xs);color:var(--c-text-3)">
+        Para alterar seus dados, entre em contato com o administrador da plataforma.
+      </p>
+    </div>
+  </div>
+
+  {# Alterar senha #}
+  <div class="card card-padded" style="margin-top:var(--sp-5)">
+    <h2 class="section-title" style="margin-bottom:var(--sp-5)">Alterar senha</h2>
+    <form method="POST" action="/minhas-configuracoes/senha" style="display:flex;flex-direction:column;gap:var(--sp-4)">
+      <div class="form-group">
+        <label class="form-label required">Senha atual</label>
+        <input class="form-input" type="password" name="senha_atual" placeholder="Digite sua senha atual" required />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label required">Nova senha</label>
+          <input class="form-input" type="password" name="nova_senha" placeholder="Mín. 8 caracteres" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label required">Confirmar nova senha</label>
+          <input class="form-input" type="password" name="confirmar_senha" placeholder="Repita a nova senha" required />
+        </div>
+      </div>
+      <div>
+        <button type="submit" class="btn btn-primary">Salvar nova senha</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

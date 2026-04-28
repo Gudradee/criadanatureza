@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Histórico de Vendas{% endblock %}
+{% block page_title %}Histórico{% endblock %}
+{% block page_subtitle %}Últimas 100 vendas diretas{% endblock %}
+
+{% block topbar_actions %}
+<a href="/caixa" class="btn btn-primary">Nova leitura</a>
+{% endblock %}
+
+{% block content %}
+{% if not vendas %}
+  <div class="card" style="text-align:center;padding:var(--sp-8)">
+    <p style="color:var(--color-text-muted)">Nenhuma venda registrada ainda.</p>
+  </div>
+{% else %}
+<div class="card">
+  <table class="table" style="width:100%">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Data</th>
+        <th>Pagamento</th>
+        <th style="text-align:right">Bruto</th>
+        <th style="text-align:right">Desconto</th>
+        <th style="text-align:right">Líquido</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for venda in vendas %}
+    <tr>
+      <td style="color:var(--color-text-muted);font-size:.8rem">{{ venda.id }}</td>
+      <td>{{ venda.data_venda.strftime("%d/%m/%Y %H:%M") }}</td>
+      <td>{{ venda.forma_pagamento or "—" }}</td>
+      <td style="text-align:right">{{ venda.valor_total_bruto | brl }}</td>
+      <td style="text-align:right;color:var(--color-danger)">
+        {% if venda.valor_total_desconto > 0 %}− {{ venda.valor_total_desconto | brl }}{% else %}—{% endif %}
+      </td>
+      <td style="text-align:right;font-weight:600;color:var(--color-primary)">{{ venda.valor_total_liquido | brl }}</td>
+      <td style="text-align:right">
+        <a href="/caixa/venda/{{ venda.id }}" class="btn" style="font-size:.8rem;padding:4px 10px">Ver recibo</a>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Financeiro{% endblock %}
+
+{% block page_title %}Financeiro{% endblock %}
+{% block page_subtitle %}Fluxo de caixa e transações{% endblock %}
+
+{% block content %}
+<!-- KPIs -->
+{% if is_admin %}
+<div class="grid-4" style="margin-bottom:var(--sp-6);grid-template-columns:repeat(5,1fr)">
+  <div class="kpi-card" style="--kpi-accent:var(--c-green);--kpi-icon-bg:#f0faf5;--kpi-icon-color:#059669">
+    <div class="kpi-header">
+      <span class="kpi-label">Faturamento total</span>
+      <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div>
+    </div>
+    <div class="kpi-value">{{ resumo.total_entradas | brl }}</div>
+    <div class="kpi-footer">Mês: {{ resumo.mes_atual_entradas | brl }}</div>
+  </div>
+
+  <div class="kpi-card" style="--kpi-accent:var(--c-danger);--kpi-icon-bg:#fef2f2;--kpi-icon-color:#dc2626">
+    <div class="kpi-header">
+      <span class="kpi-label">Custo de produção</span>
+      <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
+    </div>
+    <div class="kpi-value">{{ resumo.total_custo_prod | brl }}</div>
+    <div class="kpi-footer">Mês: {{ resumo.mes_atual_custo_prod | brl }}</div>
+  </div>
+
+  <div class="kpi-card" style="--kpi-accent:#f59e0b;--kpi-icon-bg:#fffbeb;--kpi-icon-color:#d97706">
+    <div class="kpi-header">
+      <span class="kpi-label">Outras despesas</span>
+      <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg></div>
+    </div>
+    <div class="kpi-value">{{ resumo.total_outras_saidas | brl }}</div>
+    <div class="kpi-footer">Mês: {{ resumo.mes_atual_outras | brl }}</div>
+  </div>
+
+  <div class="kpi-card" style="--kpi-accent:#8b5cf6;--kpi-icon-bg:#f5f3ff;--kpi-icon-color:#7c3aed">
+    <div class="kpi-header">
+      <span class="kpi-label">Comissões parceiros</span>
+      <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+    </div>
+    <div class="kpi-value" style="color:#7c3aed">{{ resumo.total_comissoes | brl }}</div>
+    <div class="kpi-footer">Mês: {{ resumo.mes_atual_comissoes | brl }}</div>
+  </div>
+
+  <div class="kpi-card" style="--kpi-accent:var(--c-teal);--kpi-icon-bg:var(--c-teal-light);--kpi-icon-color:var(--c-teal)">
+    <div class="kpi-header">
+      <span class="kpi-label">Lucro real</span>
+      <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+    </div>
+    <div class="kpi-value" style="color:{% if resumo.lucro_estimado >= 0 %}var(--c-teal){% else %}var(--c-danger){% endif %}">
+      {{ resumo.lucro_estimado | brl }}
+    </div>
+    <div class="kpi-footer">Mês: {{ resumo.mes_atual_lucro | brl }}</div>
+  </div>
+</div>
+{% else %}
+{# KPIs para parceiro: receita das vendas + lucro real (% comissão sobre receita) #}
+<div class="grid-4" style="margin-bottom:var(--sp-6);grid-template-columns:repeat(2,1fr);max-width:560px">
+  <div class="kpi-card" style="--kpi-accent:var(--c-green);--kpi-icon-bg:#f0faf5;--kpi-icon-color:#059669">
+    <div class="kpi-header">
+      <span class="kpi-label">Suas vendas (receita)</span>
+      <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div>
+    </div>
+    <div class="kpi-value">{{ resumo.total_entradas | brl }}</div>
+    <div class="kpi-footer">Mês: {{ resumo.mes_atual_entradas | brl }}</div>
+  </div>
+
+  <div class="kpi-card" style="--kpi-accent:var(--c-teal);--kpi-icon-bg:var(--c-teal-light);--kpi-icon-color:var(--c-teal)">
+    <div class="kpi-header">
+      <span class="kpi-label">Seu lucro ({{ "%.0f"|format(parceiro_comissao_pct * 100) }}% da receita)</span>
+      <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+    </div>
+    <div class="kpi-value" style="color:var(--c-teal)">{{ parceiro_lucro | brl }}</div>
+    <div class="kpi-footer">Mês: {{ parceiro_lucro_mes | brl }}</div>
+  </div>
+</div>
+{% endif %}
+
+{% if is_admin and vendas_detalhadas %}
+<!-- Margem por venda -->
+<div class="card card-padded" style="margin-bottom:var(--sp-6)">
+  <div class="section-header" style="margin-bottom:var(--sp-4)">
+    <h2 class="section-title">Margem por venda</h2>
+    <span class="badge badge-teal">Últimas 50 vendas via caixa</span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Itens</th>
+          <th style="text-align:right">Bruto</th>
+          <th style="text-align:right">Desconto</th>
+          <th style="text-align:right">Receita líquida</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in vendas_detalhadas %}
+        <tr>
+          <td style="font-size:var(--text-xs);color:var(--c-text-3);white-space:nowrap">
+            {{ v.data.strftime('%d/%m/%Y') if v.data else '—' }}<br>
+            {% if v.forma %}<span class="badge" style="background:var(--bg-subtle)">{{ v.forma }}</span>{% endif %}
+          </td>
+          <td style="font-size:var(--text-xs)">
+            {% for item in v.itens %}
+            <div>{{ item.nome }} × {{ item.qty }} <span style="color:var(--c-text-3)">({{ item.preco | brl }})</span></div>
+            {% endfor %}
+          </td>
+          <td style="text-align:right;color:var(--c-text-2)">{{ v.bruto | brl }}</td>
+          <td style="text-align:right;color:#dc2626">
+            {% if v.desconto > 0 %}−{{ v.desconto | brl }}{% else %}—{% endif %}
+          </td>
+          <td style="text-align:right;color:#059669;font-weight:700">{{ v.liquido | brl }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if is_admin and resumo_parceiros %}
+<!-- Lucro por parceiro -->
+<div class="card card-padded" style="margin-bottom:var(--sp-6)">
+  <div class="section-header" style="margin-bottom:var(--sp-4)">
+    <h2 class="section-title">Lucro sobre parceiros</h2>
+    <span class="badge badge-teal">O que você recebe de cada parceiro</span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Parceiro</th>
+          <th style="text-align:right">Comissão</th>
+          <th style="text-align:right">Receita gerada</th>
+          <th style="text-align:right">Comissão paga</th>
+          <th style="text-align:right">Você recebe</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in resumo_parceiros %}
+        <tr>
+          <td>
+            <a href="/parceiros/{{ p.id }}" style="font-weight:500;color:var(--c-teal)">{{ p.nome }}</a>
+          </td>
+          <td style="text-align:right;font-size:var(--text-sm);color:var(--c-text-3)">{{ "%.1f"|format(p.comissao_pct) }}%</td>
+          <td style="text-align:right;color:#059669;font-weight:600">{{ p.receita | brl }}</td>
+          <td style="text-align:right;color:#7c3aed">{{ p.comissao | brl }}</td>
+          <td style="text-align:right;font-weight:700;color:{% if p.admin_recebe >= 0 %}var(--c-teal){% else %}var(--c-danger){% endif %}">
+            {{ p.admin_recebe | brl }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="border-top:2px solid var(--border-color);font-weight:700">
+          <td>Total</td>
+          <td></td>
+          <td style="text-align:right;color:#059669">{{ resumo_parceiros | sum(attribute='receita') | brl }}</td>
+          <td style="text-align:right;color:#7c3aed">{{ resumo_parceiros | sum(attribute='comissao') | brl }}</td>
+          <td style="text-align:right;color:var(--c-teal)">{{ resumo_parceiros | sum(attribute='admin_recebe') | brl }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Nova transação + Filtros -->
+<div style="display:grid;grid-template-columns:{% if is_admin %}1fr 340px{% else %}1fr{% endif %};gap:var(--sp-5);margin-bottom:var(--sp-6)">
+
+  <!-- Tabela de transações -->
+  <div>
+    <div class="section-header" style="margin-bottom:var(--sp-4)">
+      <h2 class="section-title">Transações</h2>
+      <div style="display:flex;gap:var(--sp-2)">
+        <a href="/financeiro" class="btn btn-ghost btn-sm {% if not tipo_filtro %}active{% endif %}" style="{% if not tipo_filtro %}color:var(--c-teal);font-weight:600{% endif %}">Todas</a>
+        <a href="/financeiro?tipo=entrada" class="btn btn-ghost btn-sm" style="{% if tipo_filtro == 'entrada' %}color:var(--c-teal);font-weight:600{% endif %}">Entradas</a>
+        <a href="/financeiro?tipo=saida" class="btn btn-ghost btn-sm" style="{% if tipo_filtro == 'saida' %}color:var(--c-teal);font-weight:600{% endif %}">Saídas</a>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Descrição</th>
+            <th>Categoria</th>
+            <th>Data</th>
+            <th style="text-align:right">Valor</th>
+            <th style="width:50px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if transacoes %}
+            {% for t in transacoes %}
+            <tr>
+              <td>
+                {% if t.tipo == 'entrada' %}
+                <span class="badge" style="background:#f0faf5;color:#059669">Entrada</span>
+                {% else %}
+                <span class="badge" style="background:#fef2f2;color:#dc2626">Saída</span>
+                {% endif %}
+              </td>
+              <td style="font-size:var(--text-sm)">{{ t.descricao }}</td>
+              <td><span class="category-tag">{{ t.categoria or '—' }}</span></td>
+              <td style="font-size:var(--text-xs);color:var(--c-text-3)">{{ t.data.strftime('%d/%m/%Y') if t.data else '—' }}</td>
+              <td style="text-align:right;font-weight:600;{% if t.tipo == 'entrada' %}color:#059669{% else %}color:#dc2626{% endif %}">
+                {{ t.valor | brl }}
+              </td>
+              {% if is_admin %}
+              <td>
+                <form method="POST" action="/financeiro/{{ t.id }}/deletar" onsubmit="return confirm('Excluir esta transação?')" style="display:inline">
+                  <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Excluir" style="color:var(--c-danger)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                  </button>
+                </form>
+              </td>
+              {% else %}
+              <td></td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align:center;padding:var(--sp-8);color:var(--c-text-3)">Nenhuma transação encontrada.</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Formulário nova transação (admin only) -->
+  {% if is_admin %}
+  <div class="card card-padded" style="align-self:start">
+    <h3 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-5)">Nova transação</h3>
+    <form method="POST" action="/financeiro/nova">
+      <div class="form-group">
+        <label class="form-label required">Tipo</label>
+        <select class="form-select" name="tipo" required>
+          <option value="entrada">Entrada</option>
+          <option value="saida">Saída</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label required">Descrição</label>
+        <input class="form-input" name="descricao" placeholder="Ex: Venda direta, compra de matéria-prima..." required />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label required">Valor (R$)</label>
+          <input class="form-input" name="valor" type="number" min="0.01" step="0.01" placeholder="0,00" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <input class="form-input" name="categoria" placeholder="Ex: Venda..." />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Data</label>
+        <input class="form-input" name="data" type="date" />
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:var(--sp-2)">Salvar transação</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Caixa{% endblock %}
+{% block page_title %}Caixa{% endblock %}
+{% block page_subtitle %}Pedidos aguardando atendimento{% endblock %}
+
+{% block head %}
+<meta http-equiv="refresh" content="15">
+{% endblock %}
+
+{% block topbar_actions %}
+<span style="font-size:var(--text-xs);color:var(--c-text-3)">Atualiza automaticamente a cada 15s</span>
+<a href="/caixa/historico" class="btn btn-secondary btn-sm">Histórico</a>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 360px;gap:var(--sp-6);align-items:start">
+
+  <!-- ── Lista de pedidos pendentes ──────────────────────────── -->
+  <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-4)">
+      <h2 style="font-size:var(--text-md);font-weight:600">Pedidos em aberto</h2>
+      <span style="font-size:var(--text-xs);color:var(--c-text-3)">{{ pendentes | length }} aguardando</span>
+    </div>
+
+    {% if not pendentes %}
+    <div class="card card-padded" style="text-align:center;padding:var(--sp-10)">
+      <p style="font-size:var(--text-md);margin-bottom:var(--sp-2)">Nenhum pedido aguardando</p>
+      <p style="font-size:var(--text-sm);color:var(--c-text-3)">Quando um cliente finalizar a compra no catálogo, o pedido aparecerá aqui.</p>
+    </div>
+    {% else %}
+    <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+      {% for pv in pendentes %}
+      <a href="/caixa/pedido/{{ pv.token }}" style="text-decoration:none">
+        <div class="card" style="padding:var(--sp-4) var(--sp-5);display:flex;align-items:center;justify-content:space-between;gap:var(--sp-4);cursor:pointer;border:1px solid var(--c-border);transition:border-color .15s,box-shadow .15s"
+             onmouseover="this.style.borderColor='var(--c-teal)';this.style.boxShadow='0 0 0 3px rgba(56,163,165,.12)'"
+             onmouseout="this.style.borderColor='var(--c-border)';this.style.boxShadow='none'">
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-1)">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--c-warning);flex-shrink:0;animation:pulse 2s infinite"></span>
+              <span style="font-weight:600;font-size:var(--text-sm)">Pedido #{{ pv.token[:8] }}</span>
+            </div>
+            <div style="font-size:var(--text-xs);color:var(--c-text-3)">
+              {{ pv.itens | length }} item(s) ·
+              {% if pv.expira_em %}
+                Expira às {{ pv.expira_em.strftime("%H:%M") }}
+              {% endif %}
+            </div>
+            <div style="margin-top:var(--sp-2);font-size:var(--text-xs);color:var(--c-text-3)">
+              {% for item in pv.itens %}
+                <span>{{ item.produto.nome }} × {{ item.quantidade }}</span>{% if not loop.last %} · {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+          <div style="flex-shrink:0;display:flex;align-items:center;gap:var(--sp-3)">
+            <div style="text-align:right">
+              <div style="font-weight:700;font-size:var(--text-md);color:var(--c-text-1)">
+                {{ (pv.itens | sum(attribute='preco_ref') if false else '') }}
+              </div>
+              <span style="font-size:var(--text-xs);color:var(--c-text-3)">
+                Criado às {{ pv.criado_em.strftime("%H:%M") }}
+              </span>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Painel lateral: busca manual + QR ────────────────────── -->
+  <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+
+    <!-- Busca por token -->
+    <div class="card card-padded">
+      <h3 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-3)">Buscar por código</h3>
+      <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:var(--sp-3)">
+        Cole o token do QR Code do cliente ou use um leitor de código de barras.
+      </p>
+      <form action="/caixa/buscar" method="post">
+        <input type="text" name="token" placeholder="Cole o código aqui…"
+               autofocus autocomplete="off"
+               style="width:100%;padding:var(--sp-3);border:1px solid var(--c-border);border-radius:var(--r-md);background:var(--c-bg);color:var(--c-text-1);font-size:var(--text-sm);margin-bottom:var(--sp-3)">
+        <button type="submit" class="btn btn-primary" style="width:100%">Abrir pedido</button>
+      </form>
+    </div>
+
+    <!-- Instrução de leitura -->
+    <div class="card card-padded" style="background:var(--c-info-bg);border:1px solid rgba(56,163,165,.2)">
+      <h3 style="font-size:var(--text-sm);font-weight:600;color:var(--c-teal);margin-bottom:var(--sp-3)">Como atender</h3>
+      <ol style="font-size:var(--text-xs);color:var(--c-text-2);padding-left:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-2)">
+        <li>O cliente mostra o QR Code gerado na tela do celular dele</li>
+        <li>Escaneie com o celular do caixa <strong>OU</strong> o pedido aparece automaticamente na lista ao lado</li>
+        <li>Clique no pedido para abrir os detalhes</li>
+        <li>Aplique descontos se necessário e confirme a venda</li>
+        <li>Faça a cobrança no mundo real e clique em <strong>"Confirmar venda"</strong></li>
+      </ol>
+    </div>
+
+  </div>
+</div>
+
+<style>
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+</style>
+{% endblock %}

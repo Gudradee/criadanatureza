@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Configurações{% endblock %}
+{% block page_title %}Configurações{% endblock %}
+{% block page_subtitle %}Categorias, usuários e preferências{% endblock %}
+
+{% block content %}
+<div style="max-width:720px;margin:0 auto">
+
+  <!-- ── QR Code do catálogo público ──────────────────────────── -->
+  <section class="page-section">
+    <div class="card card-padded">
+      <h2 class="section-title" style="margin-bottom:var(--sp-2)">QR Code do catálogo</h2>
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);margin-bottom:var(--sp-5)">
+        Compartilhe com clientes. Ao escanear, acessam a loja e montam o carrinho.
+      </p>
+      <div style="display:flex;align-items:center;gap:var(--sp-6);flex-wrap:wrap">
+        <div style="background:#fff;border:1px solid var(--c-border);border-radius:var(--r-lg);padding:var(--sp-4);display:inline-block;flex-shrink:0">
+          <img src="/configuracoes/qr-catalogo.png" alt="QR Code" style="width:140px;height:140px;display:block">
+        </div>
+        <div style="flex:1;min-width:200px">
+          <ol style="font-size:var(--text-sm);color:var(--c-text-3);padding-left:var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-2)">
+            <li>Imprima ou exiba no ponto de venda</li>
+            <li>Cliente escaneia e escolhe os produtos</li>
+            <li>Um QR Code é gerado na tela do cliente</li>
+            <li>Caixa escaneia e confirma a venda</li>
+          </ol>
+          <div style="margin-top:var(--sp-4);display:flex;gap:var(--sp-3)">
+            <a href="/loja" target="_blank" class="btn btn-secondary btn-sm">Abrir loja →</a>
+            <a href="/configuracoes/qr-catalogo.png" download="qrcode-catalogo.png" class="btn btn-primary btn-sm">Baixar QR</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Usuários do sistema ───────────────────────────────────── -->
+  <section class="page-section">
+    <div class="card card-padded">
+      <h2 class="section-title" style="margin-bottom:var(--sp-5)">Usuários</h2>
+
+      <!-- Criar novo usuário -->
+      <form method="POST" action="/configuracoes/usuarios/novo"
+            style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-5)">
+        <div class="form-group" style="margin:0">
+          <label class="form-label required">Nome</label>
+          <input class="form-input" name="nome" placeholder="Nome completo" required />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label required">Usuário</label>
+          <input class="form-input" name="username" placeholder="login.sem.espacos" required />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label required">Senha (mín. 8 caracteres)</label>
+          <input class="form-input" type="password" name="senha" required />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Perfil</label>
+          <select class="form-select" name="role">
+            <option value="parceiro">Parceiro</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Parceiro vinculado</label>
+          <select class="form-select" name="parceiro_id">
+            <option value="">— nenhum —</option>
+            {% for p in parceiros %}
+            <option value="{{ p.id }}">{{ p.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button type="submit" class="btn btn-primary" style="width:100%">Criar usuário</button>
+        </div>
+      </form>
+
+      <!-- Lista de usuários -->
+      {% if usuarios %}
+      <table class="table" style="width:100%">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Usuário</th>
+            <th>Perfil</th>
+            <th>Parceiro</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for u in usuarios %}
+        <tr>
+          <td style="font-weight:500">{{ u.nome }}</td>
+          <td style="font-family:monospace;font-size:var(--text-sm)">{{ u.username }}</td>
+          <td>
+            {% if u.role == "admin" %}
+            <span class="badge badge-teal">Admin</span>
+            {% else %}
+            <span class="badge">Parceiro</span>
+            {% endif %}
+          </td>
+          <td style="font-size:var(--text-sm);color:var(--c-text-3)">
+            {{ u.parceiro.nome if u.parceiro else "—" }}
+          </td>
+          <td>
+            {% if u.ativo %}
+            <span class="badge badge-teal">Ativo</span>
+            {% else %}
+            <span class="badge badge-warning">Inativo</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:var(--sp-2)">
+              <!-- Redefinir senha -->
+              <form method="POST" action="/configuracoes/usuarios/{{ u.id }}/redefinir-senha"
+                    onsubmit="
+                      const s = prompt('Nova senha para {{ u.username }} (mín. 8 caracteres):');
+                      if (!s || s.length < 8) { alert('Senha muito curta.'); return false; }
+                      this.querySelector('[name=nova_senha]').value = s;
+                    ">
+                <input type="hidden" name="nova_senha" value="">
+                <button type="submit" class="btn btn-ghost btn-sm" title="Redefinir senha">🔑</button>
+              </form>
+              {% if u.ativo and u.id != usuario_atual.id %}
+              <form method="POST" action="/configuracoes/usuarios/{{ u.id }}/desativar"
+                    onsubmit="return confirm('Desativar {{ u.username }}?')">
+                <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)" title="Desativar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- ── Categorias de produto ─────────────────────────────────── -->
+  <section class="page-section">
+    <div class="card card-padded">
+      <h2 class="section-title" style="margin-bottom:var(--sp-5)">Categorias de produto</h2>
+      <form method="POST" action="/configuracoes/categorias" style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-5)">
+        <input class="form-input" name="nome" placeholder="Nome da nova categoria" style="flex:1" required />
+        <button type="submit" class="btn btn-primary">Adicionar</button>
+      </form>
+      {% if categorias %}
+        {% for cat in categorias %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+          <span class="category-tag">{{ cat.nome }}</span>
+          <form method="POST" action="/configuracoes/categorias/{{ cat.id }}/deletar"
+                onsubmit="return confirm('Excluir {{ cat.nome }}?')" style="display:inline">
+            <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            </button>
+          </form>
+        </div>
+        {% endfor %}
+      {% else %}
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);text-align:center;padding:var(--sp-5)">Nenhuma categoria cadastrada.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- ── Alterar minha senha ───────────────────────────────────── -->
+  <section class="page-section">
+    <div class="card card-padded">
+      <h2 class="section-title" style="margin-bottom:var(--sp-5)">Alterar minha senha</h2>
+      <form method="POST" action="/configuracoes/minha-senha"
+            style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-3)">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Senha atual</label>
+          <input class="form-input" type="password" name="senha_atual" required />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Nova senha</label>
+          <input class="form-input" type="password" name="nova_senha" required />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Confirmar</label>
+          <input class="form-input" type="password" name="confirmacao" required />
+        </div>
+        <div style="grid-column:1/-1;display:flex;justify-content:flex-end">
+          <button type="submit" class="btn btn-primary">Alterar senha</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ── Sobre o sistema ───────────────────────────────────────── -->
+  <section class="page-section">
+    <div class="card card-padded">
+      <h2 class="section-title" style="margin-bottom:var(--sp-4)">Sobre o sistema</h2>
+      <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+        <div style="display:flex;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+          <span style="font-size:var(--text-sm);color:var(--c-text-3)">Sistema</span>
+          <span style="font-size:var(--text-sm);font-weight:500">CDN — Cria da Natureza</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+          <span style="font-size:var(--text-sm);color:var(--c-text-3)">Versão</span>
+          <span class="badge badge-teal">v1.0.0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:var(--sp-3) 0">
+          <span style="font-size:var(--text-sm);color:var(--c-text-3)">Backend</span>
+          <span style="font-size:var(--text-sm);font-weight:500">Flask + SQLite + Jinja2</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "loja/base_loja.html" %}
+{% block title %}Carrinho{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom:var(--sp-6);font-size:1.3rem">Seu Carrinho</h2>
+
+{% if not itens %}
+  <div class="card" style="text-align:center;padding:var(--sp-8)">
+    <p style="color:var(--color-text-muted);margin-bottom:var(--sp-4)">Seu carrinho está vazio.</p>
+    <a href="/loja" class="btn btn-primary">Ver produtos</a>
+  </div>
+{% else %}
+<div class="card" style="margin-bottom:var(--sp-5)">
+  <table class="table" style="width:100%">
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th style="text-align:center">Quantidade</th>
+        <th style="text-align:right">Preço unit.</th>
+        <th style="text-align:right">Subtotal</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for item in itens %}
+    <tr>
+      <td style="font-weight:500">{{ item.produto.nome }}</td>
+      <td style="text-align:center">
+        <form action="/loja/carrinho/atualizar" method="post" style="display:inline-flex;gap:var(--sp-1);align-items:center">
+          <input type="hidden" name="produto_id" value="{{ item.produto.id }}">
+          <input type="number" name="quantidade" value="{{ item.quantidade }}"
+                 min="1" max="{{ item.produto.quantidade }}"
+                 style="width:60px;padding:4px 6px;border:1px solid var(--color-border);border-radius:var(--radius);background:var(--color-surface);color:var(--color-text);text-align:center"
+                 onchange="this.form.submit()">
+        </form>
+      </td>
+      <td style="text-align:right">{{ item.produto.preco_venda | brl }}</td>
+      <td style="text-align:right;font-weight:600">{{ item.subtotal | brl }}</td>
+      <td style="text-align:right">
+        <form action="/loja/carrinho/remover" method="post" style="display:inline">
+          <input type="hidden" name="produto_id" value="{{ item.produto.id }}">
+          <button type="submit" class="btn" style="padding:4px 10px;font-size:.8rem;color:var(--color-danger)">Remover</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div style="display:flex;justify-content:flex-end;align-items:center;gap:var(--sp-5)">
+  <div style="text-align:right">
+    <p style="font-size:.85rem;color:var(--color-text-muted)">Total estimado</p>
+    <p style="font-size:1.6rem;font-weight:700;color:var(--color-primary)">{{ total | brl }}</p>
+    <p style="font-size:.75rem;color:var(--color-text-muted)">O valor final é definido pelo caixa</p>
+  </div>
+  <form action="/loja/finalizar" method="post">
+    <button type="submit" class="btn btn-primary" style="padding:var(--sp-3) var(--sp-6);font-size:1rem">
+      Gerar QR Code →
+    </button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

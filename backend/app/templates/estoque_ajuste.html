@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Ajuste de estoque{% endblock %}
+
+{% block topbar_left %}
+<div class="topbar-left">
+  <div style="display:flex;align-items:center;gap:var(--sp-3)">
+    <a href="/estoque" class="btn btn-ghost btn-sm btn-icon" title="Voltar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
+    <div>
+      <h1 class="page-title">Ajuste de estoque</h1>
+      <span class="page-subtitle">{{ produto.nome }}</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;margin:0 auto">
+  <div class="card card-padded">
+    <p style="font-size:var(--text-sm);color:var(--c-text-3);margin-bottom:var(--sp-5)">
+      Estoque atual: <strong style="color:var(--c-text-1)">{{ produto.quantidade }} unidades</strong>
+    </p>
+    <form method="POST" action="/estoque/{{ produto.id }}/ajuste">
+      <div class="form-group">
+        <label class="form-label required">Tipo de movimentação</label>
+        <select class="form-select" name="tipo" required>
+          <option value="entrada">Entrada — adicionar ao estoque</option>
+          <option value="saida">Saída — remover do estoque</option>
+          <option value="ajuste">Ajuste — definir quantidade exata</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label required">Quantidade</label>
+        <input class="form-input" name="quantidade" type="number" min="1" placeholder="0" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Motivo (opcional)</label>
+        <input class="form-input" name="motivo" placeholder="Ex: Recebimento de fornecedor, brinde, etc." />
+      </div>
+      <div class="modal-footer" style="padding:0;margin-top:var(--sp-6)">
+        <a href="/estoque" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">Confirmar ajuste</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}{% if parceiro %}Editar parceiro{% else %}Novo parceiro{% endif %}{% endblock %}
+
+{% block topbar_left %}
+<div class="topbar-left">
+  <div style="display:flex;align-items:center;gap:var(--sp-3)">
+    <a href="/parceiros" class="btn btn-ghost btn-sm btn-icon" title="Voltar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
+    <div>
+      <h1 class="page-title">{% if parceiro %}Editar parceiro{% else %}Novo parceiro{% endif %}</h1>
+      <span class="page-subtitle">{% if parceiro %}{{ parceiro.nome }}{% else %}Cadastrar novo revendedor{% endif %}</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:560px;margin:0 auto">
+  <div class="card card-padded">
+    <form method="POST" action="{% if parceiro %}/parceiros/{{ parceiro.id }}/editar{% else %}/parceiros/novo{% endif %}">
+      <div class="form-group">
+        <label class="form-label required">Nome do parceiro / revendedor</label>
+        <input class="form-input" name="nome" placeholder="Nome completo ou nome da loja"
+               value="{{ parceiro.nome if parceiro else '' }}" required />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Contato (nome)</label>
+          <input class="form-input" name="contato" placeholder="Nome do responsável"
+                 value="{{ parceiro.contato if parceiro and parceiro.contato else '' }}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Telefone / WhatsApp</label>
+          <input class="form-input" name="telefone" placeholder="(11) 99999-9999"
+                 value="{{ parceiro.telefone if parceiro and parceiro.telefone else '' }}" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">E-mail</label>
+        <input class="form-input" name="email" type="email" placeholder="email@exemplo.com"
+               value="{{ parceiro.email if parceiro and parceiro.email else '' }}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" name="status">
+          <option value="ativo" {% if not parceiro or parceiro.status == 'ativo' %}selected{% endif %}>Ativo</option>
+          <option value="inativo" {% if parceiro and parceiro.status == 'inativo' %}selected{% endif %}>Inativo</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Comissão (%)</label>
+        <input class="form-input" name="comissao_percentual" type="number" min="0" max="100" step="0.1"
+               placeholder="Ex: 2 (significa 2%)"
+               value="{{ '%.1f'|format(parceiro.comissao_percentual * 100) if parceiro else '0.0' }}" />
+        <span style="font-size:0.78rem;color:var(--text-muted)">Percentual sobre o lucro por venda realizada pelo parceiro.</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observações</label>
+        <textarea class="form-textarea" name="observacoes" placeholder="Notas internas sobre este parceiro...">{{ parceiro.observacoes if parceiro and parceiro.observacoes else '' }}</textarea>
+      </div>
+
+      {% if not parceiro %}
+      <div style="border-top:1px solid var(--border-color);margin-top:var(--sp-6);padding-top:var(--sp-5)">
+        <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;user-select:none;font-weight:500;color:var(--text-primary)">
+          <input type="checkbox" id="criar_login_toggle" name="criar_login" value="1"
+                 onchange="document.getElementById('login_fields').style.display=this.checked?'block':'none'"
+                 style="width:16px;height:16px;accent-color:var(--primary)">
+          Criar login de acesso para este parceiro
+        </label>
+        <div id="login_fields" style="display:none;margin-top:var(--sp-4)">
+          <div class="form-group">
+            <label class="form-label required">Usuário (login)</label>
+            <input class="form-input" name="login_username" placeholder="ex: gustavo.loja" autocomplete="off" />
+            <span style="font-size:0.78rem;color:var(--text-muted)">Sem espaços. O parceiro usará este nome para entrar no sistema.</span>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label required">Senha</label>
+              <input class="form-input" name="login_senha" type="password" placeholder="Mín. 8 caracteres" autocomplete="new-password" />
+            </div>
+            <div class="form-group">
+              <label class="form-label required">Confirmar senha</label>
+              <input class="form-input" name="login_senha2" type="password" placeholder="Repita a senha" autocomplete="new-password" />
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="modal-footer" style="padding:0;margin-top:var(--sp-6)">
+        <a href="/parceiros" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">
+          {% if parceiro %}Salvar alterações{% else %}Criar parceiro{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

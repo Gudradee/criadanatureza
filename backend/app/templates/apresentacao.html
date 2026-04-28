@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Apresentação{% endblock %}
+
+{% block page_title %}Apresentação{% endblock %}
+{% block page_subtitle %}Landing pages do produto{% endblock %}
+
+{% block content %}
+<div style="max-width:560px">
+  <div class="card card-padded">
+    <h2 class="section-title" style="margin-bottom:var(--sp-5)">Landing pages disponíveis</h2>
+    <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-4);border:1px solid var(--c-border-soft);border-radius:var(--radius-md)">
+        <div>
+          <div style="font-weight:600;font-size:var(--text-sm)">Versão 1</div>
+          <div style="font-size:var(--text-xs);color:var(--c-text-3)">/landing/v1/</div>
+        </div>
+        <a href="/landing/v1/" target="_blank" class="btn btn-secondary btn-sm">Abrir →</a>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-4);border:1px solid var(--c-border-soft);border-radius:var(--radius-md)">
+        <div>
+          <div style="font-weight:600;font-size:var(--text-sm)">Versão 2</div>
+          <div style="font-size:var(--text-xs);color:var(--c-text-3)">/landing/v2/</div>
+        </div>
+        <a href="/landing/v2/" target="_blank" class="btn btn-secondary btn-sm">Abrir →</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,10 +1,10 @@
 # Banco de dados
-*.db
+cdn.db
 *.sqlite3
 
-# Uploads gerados em runtime
-backend/uploads/produtos/*
-!backend/uploads/produtos/.gitkeep
+# Uploads (manter só o .gitkeep)
+uploads/produtos/*
+!uploads/produtos/.gitkeep
 
 # Segredos
 .env

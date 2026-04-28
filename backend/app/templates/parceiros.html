@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Parceiros{% endblock %}
+
+{% block page_title %}Parceiros{% endblock %}
+{% block page_subtitle %}{{ parceiros | length }} parceiro(s){% endblock %}
+
+{% block topbar_actions %}
+<a href="/parceiros/novo" class="btn btn-primary btn-sm">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Novo parceiro
+</a>
+{% endblock %}
+
+{% block content %}
+{% if parceiros %}
+<div class="grid-3">
+  {% for p in parceiros %}
+  <div class="card card-padded">
+    <div style="display:flex;align-items:flex-start;gap:var(--sp-3);margin-bottom:var(--sp-4)">
+      <div class="avatar">{{ p.nome[0] | upper }}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:var(--text-sm)">{{ p.nome }}</div>
+        {% if p.contato %}<div style="font-size:var(--text-xs);color:var(--c-text-3)">{{ p.contato }}</div>{% endif %}
+      </div>
+      <span class="badge {% if p.status == 'ativo' %}badge-teal{% endif %}">{{ p.status }}</span>
+    </div>
+
+    {% if p.telefone or p.email %}
+    <div style="display:flex;flex-direction:column;gap:var(--sp-2);margin-bottom:var(--sp-4);font-size:var(--text-xs);color:var(--c-text-3)">
+      {% if p.telefone %}<span>📞 {{ p.telefone }}</span>{% endif %}
+      {% if p.email %}<span>✉ {{ p.email }}</span>{% endif %}
+    </div>
+    {% endif %}
+
+    <div style="display:flex;gap:var(--sp-2)">
+      <a href="/parceiros/{{ p.id }}" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center">Ver detalhe</a>
+      <a href="/parceiros/{{ p.id }}/editar" class="btn btn-ghost btn-sm btn-icon" title="Editar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </a>
+      <form method="POST" action="/parceiros/{{ p.id }}/deletar" onsubmit="return confirm('Excluir parceiro {{ p.nome }}?')" style="display:inline">
+        <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Excluir" style="color:var(--c-danger)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center;padding:var(--sp-12);color:var(--c-text-3)">
+  <p style="margin-bottom:var(--sp-4)">Nenhum parceiro cadastrado.</p>
+  <a href="/parceiros/novo" class="btn btn-primary">Cadastrar primeiro parceiro</a>
+</div>
+{% endif %}
+{% endblock %}

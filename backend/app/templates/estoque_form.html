@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}{% if produto %}Editar produto{% else %}Novo produto{% endif %}{% endblock %}
+
+{% block topbar_left %}
+<div class="topbar-left">
+  <div style="display:flex;align-items:center;gap:var(--sp-3)">
+    <a href="/estoque" class="btn btn-ghost btn-sm btn-icon" title="Voltar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
+    <div>
+      <h1 class="page-title">{% if produto %}Editar produto{% else %}Novo produto{% endif %}</h1>
+      <span class="page-subtitle">{% if produto %}{{ produto.nome }}{% else %}Cadastrar novo produto{% endif %}</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:720px;margin:0 auto">
+  <div class="card card-padded">
+    <form method="POST"
+          action="{% if produto %}/estoque/{{ produto.id }}/editar{% else %}/estoque/novo{% endif %}"
+          enctype="multipart/form-data">
+
+      <!-- ── Imagem ───────────────────────────────────────────── -->
+      <div class="form-group" style="margin-bottom:var(--sp-6)">
+        <label class="form-label">Foto do produto</label>
+
+        <div id="drop-zone" style="
+          border:2px dashed var(--c-border);
+          border-radius:var(--r-lg);
+          padding:var(--sp-6);
+          text-align:center;
+          cursor:pointer;
+          transition:border-color .2s;
+          background:var(--c-bg);
+          position:relative;
+        ">
+          <!-- Preview -->
+          <div id="preview-wrap" style="{% if produto and produto.imagem_url %}display:block{% else %}display:none{% endif %}">
+            <img id="preview-img"
+                 src="{{ produto.imagem_url if produto and produto.imagem_url else '' }}"
+                 alt="Preview"
+                 style="max-height:200px;max-width:100%;border-radius:var(--r-md);object-fit:contain;margin-bottom:var(--sp-3)">
+          </div>
+
+          <!-- Placeholder -->
+          <div id="placeholder" style="{% if produto and produto.imagem_url %}display:none{% else %}display:flex{% endif %};flex-direction:column;align-items:center;gap:var(--sp-2);pointer-events:none">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3)" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <p style="font-size:var(--text-sm);color:var(--c-text-3);margin:0">Clique ou arraste uma imagem aqui</p>
+            <p style="font-size:var(--text-xs);color:var(--c-text-4);margin:0">JPG, PNG, WEBP — máx. 5 MB</p>
+          </div>
+
+          <input type="file" id="imagem-input" name="imagem" accept="image/*"
+                 style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer">
+        </div>
+
+        {% if produto and produto.imagem_url %}
+        <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-top:var(--sp-2)">
+          Imagem atual. Selecione uma nova para substituir.
+        </p>
+        {% endif %}
+      </div>
+
+      <!-- ── Nome + Categoria ──────────────────────────────────── -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label required">Nome do produto</label>
+          <input class="form-input" name="nome" placeholder="Ex: Shampoo Vegano 250ml"
+                 value="{{ produto.nome if produto else '' }}" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <select class="form-select" name="categoria_id">
+            <option value="">Sem categoria</option>
+            {% for cat in categorias %}
+            <option value="{{ cat.id }}" {% if produto and produto.categoria_id == cat.id %}selected{% endif %}>{{ cat.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- ── Descrição ─────────────────────────────────────────── -->
+      <div class="form-group">
+        <label class="form-label">Descrição</label>
+        <textarea class="form-textarea" name="descricao" rows="3"
+                  placeholder="Descrição visível ao cliente na loja...">{{ produto.descricao if produto and produto.descricao else '' }}</textarea>
+      </div>
+
+      <!-- ── Quantidade + Estoque mínimo ──────────────────────── -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label required">Quantidade inicial</label>
+          <input class="form-input" name="quantidade" type="number" min="0" placeholder="0"
+                 value="{{ produto.quantidade if produto else 0 }}" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estoque mínimo</label>
+          <input class="form-input" name="estoque_minimo" type="number" min="0" placeholder="5"
+                 value="{{ produto.estoque_minimo if produto else 5 }}" />
+        </div>
+      </div>
+
+      <!-- ── Preços ────────────────────────────────────────────── -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Preço de custo (R$)</label>
+          <input class="form-input" name="preco_custo" type="number" min="0" step="0.01" placeholder="0,00"
+                 value="{{ produto.preco_custo if produto else '' }}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Preço de venda (R$)</label>
+          <input class="form-input" name="preco_venda" type="number" min="0" step="0.01" placeholder="0,00"
+                 value="{{ produto.preco_venda if produto else '' }}" />
+        </div>
+      </div>
+
+      <!-- ── Ações ─────────────────────────────────────────────── -->
+      <div class="modal-footer" style="padding:0;margin-top:var(--sp-6)">
+        <a href="/estoque" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">
+          {% if produto %}Salvar alterações{% else %}Criar produto{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const input = document.getElementById('imagem-input');
+  const preview = document.getElementById('preview-img');
+  const previewWrap = document.getElementById('preview-wrap');
+  const placeholder = document.getElementById('placeholder');
+  const dropZone = document.getElementById('drop-zone');
+
+  function mostrarPreview(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      previewWrap.style.display = 'block';
+      placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  input.addEventListener('change', () => mostrarPreview(input.files[0]));
+
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--c-teal)';
+  });
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.style.borderColor = 'var(--c-border)';
+  });
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--c-border)';
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      mostrarPreview(file);
+    }
+  });
+</script>
+{% endblock %}
