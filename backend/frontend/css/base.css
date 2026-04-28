@@ -1,0 +1,155 @@
+/* ============================================================
+   CDN — Cria da Natureza  |  Design System Base
+   Inspirado em Apple Design Guidelines
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* ── Paleta principal ── */
+  --c-teal:        #38a3a5;
+  --c-teal-dark:   #2d8587;
+  --c-teal-light:  #e8f6f6;
+  --c-green:       #57cc99;
+  --c-green-light: #80ed99;
+  --c-pale:        #c7f9cc;
+  --c-navy:        #22577a;
+  --c-navy-dark:   #1a4260;
+
+  /* ── Neutros ── */
+  --c-white:       #ffffff;
+  --c-bg:          #f5f7f9;
+  --c-surface:     #ffffff;
+  --c-border:      #e8ecf0;
+  --c-border-soft: #f0f3f5;
+
+  /* ── Texto ── */
+  --c-text-1:      #111827;
+  --c-text-2:      #374151;
+  --c-text-3:      #6b7280;
+  --c-text-4:      #9ca3af;
+
+  /* ── Semântico ── */
+  --c-success:     #57cc99;
+  --c-success-bg:  #f0faf5;
+  --c-warning:     #f59e0b;
+  --c-warning-bg:  #fffbeb;
+  --c-danger:      #ef4444;
+  --c-danger-bg:   #fef2f2;
+  --c-info:        #38a3a5;
+  --c-info-bg:     #f0f9fa;
+
+  /* ── Tipografia ── */
+  --font:          -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
+                   "Helvetica Neue", Arial, sans-serif;
+  --font-mono:     "SF Mono", "Fira Code", "Cascadia Code", monospace;
+
+  /* ── Escala de tamanho ── */
+  --text-xs:   11px;
+  --text-sm:   13px;
+  --text-base: 15px;
+  --text-md:   17px;
+  --text-lg:   20px;
+  --text-xl:   24px;
+  --text-2xl:  30px;
+  --text-3xl:  38px;
+
+  /* ── Espaçamento ── */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-8:  32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* ── Raio ── */
+  --r-sm:   8px;
+  --r-md:   12px;
+  --r-lg:   16px;
+  --r-xl:   20px;
+  --r-2xl:  28px;
+  --r-full: 9999px;
+
+  /* ── Sombras ── */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.05);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,.10), 0 4px 8px rgba(0,0,0,.05);
+  --shadow-xl: 0 20px 48px rgba(0,0,0,.12), 0 8px 16px rgba(0,0,0,.06);
+
+  /* ── Transições ── */
+  --ease:      cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out:  cubic-bezier(0, 0, 0.2, 1);
+  --t-fast:    120ms;
+  --t-base:    200ms;
+  --t-slow:    350ms;
+
+  /* ── Layout ── */
+  --sidebar-w:  240px;
+  --header-h:   60px;
+  --content-max: 1200px;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font);
+  font-size: var(--text-base);
+  color: var(--c-text-1);
+  background-color: var(--c-bg);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Links ── */
+a {
+  color: var(--c-teal);
+  text-decoration: none;
+  transition: color var(--t-fast) var(--ease);
+}
+a:hover { color: var(--c-teal-dark); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--c-border);
+  border-radius: var(--r-full);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--c-text-4); }
+
+/* ── Focus ── */
+:focus-visible {
+  outline: 2px solid var(--c-teal);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* ── Utilitários ── */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

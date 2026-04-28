@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parceiro — CDN</title>
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/layout.css" />
+  <link rel="stylesheet" href="/static/css/components.css" />
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🌿</div>
+      <div class="logo-text">
+        <span class="logo-title">CDN</span>
+        <span class="logo-sub">Cria da Natureza</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="/estoque.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Estoque
+      </a>
+      <a href="/parceiros.html" class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Parceiros
+      </a>
+      <a href="/financeiro.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Financeiro
+      </a>
+      <a href="/configuracoes.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/></svg>
+        Configurações
+      </a>
+      <a href="/apresentacao-landings.html" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Apresentação
+      </a>
+    </nav>
+    <div class="sidebar-footer"><p class="sidebar-version">CDN v1.0 · 2025</p></div>
+  </aside>
+
+  <div class="sidebar-overlay overlay" id="sidebarOverlay"></div>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="sidebar-toggle btn btn-ghost btn-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-left">
+        <div style="display:flex;align-items:center;gap:var(--sp-3)">
+          <a href="/parceiros.html" class="btn btn-ghost btn-sm btn-icon" title="Voltar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </a>
+          <div>
+            <h1 class="page-title" id="detalhe-nome">Carregando...</h1>
+            <span class="page-subtitle" id="detalhe-sub"></span>
+          </div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-secondary btn-sm" onclick="abrirModalDevolucao()">Registrar devolução</button>
+        <button class="btn btn-success btn-sm" onclick="abrirModalVenda()">Registrar venda</button>
+        <button class="btn btn-primary btn-sm" onclick="abrirModalEnvio()">Registrar envio</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- KPIs do parceiro -->
+      <div class="grid-4" style="margin-bottom:var(--sp-8)">
+        <div class="kpi-card" style="--kpi-accent:var(--c-teal);--kpi-icon-bg:var(--c-teal-light);--kpi-icon-color:var(--c-teal)">
+          <div class="kpi-header">
+            <span class="kpi-label">Total enviado</span>
+            <div class="kpi-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-enviado">—</div>
+          <div class="kpi-footer">unidades enviadas</div>
+        </div>
+
+        <div class="kpi-card" style="--kpi-accent:var(--c-green);--kpi-icon-bg:#f0faf5;--kpi-icon-color:#059669">
+          <div class="kpi-header">
+            <span class="kpi-label">Total vendido</span>
+            <div class="kpi-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-vendido">—</div>
+          <div class="kpi-footer">pelo parceiro</div>
+        </div>
+
+        <div class="kpi-card" style="--kpi-accent:var(--c-navy);--kpi-icon-bg:#eef2f7;--kpi-icon-color:var(--c-navy)">
+          <div class="kpi-header">
+            <span class="kpi-label">Em mãos</span>
+            <div class="kpi-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-em-maos">—</div>
+          <div class="kpi-footer" id="kpi-valor-maos">com o parceiro agora</div>
+        </div>
+
+        <div class="kpi-card" style="--kpi-accent:var(--c-warning);--kpi-icon-bg:var(--c-warning-bg);--kpi-icon-color:var(--c-warning)">
+          <div class="kpi-header">
+            <span class="kpi-label">Devolvido</span>
+            <div class="kpi-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-devolvido">—</div>
+          <div class="kpi-footer">unidades devolvidas</div>
+        </div>
+      </div>
+
+      <!-- Histórico -->
+      <div class="section-header">
+        <h2 class="section-title">Histórico de movimentações</h2>
+        <div style="display:flex;gap:var(--sp-2)">
+          <button class="btn btn-ghost btn-sm" onclick="filtrarHistorico('todos')" id="filtro-todos" style="color:var(--c-teal)">Todos</button>
+          <button class="btn btn-ghost btn-sm" onclick="filtrarHistorico('envio')" id="filtro-envio">Envios</button>
+          <button class="btn btn-ghost btn-sm" onclick="filtrarHistorico('venda')" id="filtro-venda">Vendas</button>
+          <button class="btn btn-ghost btn-sm" onclick="filtrarHistorico('devolucao')" id="filtro-dev">Devoluções</button>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Data</th>
+              <th>Produtos</th>
+              <th>Obs.</th>
+            </tr>
+          </thead>
+          <tbody id="historico-tbody">
+            <tr><td colspan="4" class="loading-state"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Modal: Envio -->
+<div class="modal-backdrop" id="modal-envio">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title">Registrar envio</h2>
+      <button class="modal-close" onclick="closeModal('modal-envio')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="itens-envio" style="display:flex;flex-direction:column;gap:var(--sp-3)"></div>
+      <button class="btn btn-secondary btn-sm" style="margin-top:var(--sp-3)" onclick="addLinhaEnvio()">+ Adicionar produto</button>
+      <div class="form-group" style="margin-top:var(--sp-5)">
+        <label class="form-label">Observações</label>
+        <input class="form-input" id="envio-obs" placeholder="Opcional..." />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-envio')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarEnvio()">Confirmar envio</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Venda -->
+<div class="modal-backdrop" id="modal-venda">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title">Registrar venda</h2>
+      <button class="modal-close" onclick="closeModal('modal-venda')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-success" style="margin-bottom:var(--sp-4)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>O valor total será registrado automaticamente como entrada financeira.</span>
+      </div>
+      <div id="itens-venda" style="display:flex;flex-direction:column;gap:var(--sp-3)"></div>
+      <button class="btn btn-secondary btn-sm" style="margin-top:var(--sp-3)" onclick="addLinhaVenda()">+ Adicionar produto</button>
+      <div class="form-group" style="margin-top:var(--sp-5)">
+        <label class="form-label">Observações</label>
+        <input class="form-input" id="venda-obs" placeholder="Opcional..." />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-venda')">Cancelar</button>
+      <button class="btn btn-success" onclick="confirmarVenda()">Confirmar venda</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Devolução -->
+<div class="modal-backdrop" id="modal-devolucao">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title">Registrar devolução</h2>
+      <button class="modal-close" onclick="closeModal('modal-devolucao')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warning" style="margin-bottom:var(--sp-4)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
+        <span>Os produtos devolvidos voltam automaticamente para o estoque.</span>
+      </div>
+      <div id="itens-dev" style="display:flex;flex-direction:column;gap:var(--sp-3)"></div>
+      <button class="btn btn-secondary btn-sm" style="margin-top:var(--sp-3)" onclick="addLinhaDev()">+ Adicionar produto</button>
+      <div class="form-group" style="margin-top:var(--sp-5)">
+        <label class="form-label">Observações</label>
+        <input class="form-input" id="dev-obs" placeholder="Motivo da devolução..." />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-devolucao')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarDevolucao()">Confirmar devolução</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/parceiro-detalhe.js"></script>
+</body>
+</html>

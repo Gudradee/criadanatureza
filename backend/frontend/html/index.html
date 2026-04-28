@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — CDN</title>
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/layout.css" />
+  <link rel="stylesheet" href="/static/css/components.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🌿</div>
+      <div class="logo-text">
+        <span class="logo-title">CDN</span>
+        <span class="logo-sub">Cria da Natureza</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item active" data-page="dashboard">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="/estoque.html" class="nav-item" data-page="estoque">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        Estoque
+        <span class="badge" id="nav-alerta-badge" style="display:none">!</span>
+      </a>
+      <a href="/parceiros.html" class="nav-item" data-page="parceiros">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Parceiros
+      </a>
+      <a href="/financeiro.html" class="nav-item" data-page="financeiro">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Financeiro
+      </a>
+      <a href="/configuracoes.html" class="nav-item" data-page="config">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Configurações
+      </a>
+      <a href="/apresentacao-landings.html" class="nav-item" data-page="apresentacao">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Apresentação
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <p class="sidebar-version">CDN v1.0 · 2025</p>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay overlay" id="sidebarOverlay"></div>
+
+  <!-- Main -->
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="sidebar-toggle btn btn-ghost btn-icon" aria-label="Menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-left">
+        <h1 class="page-title">Dashboard</h1>
+        <span class="page-subtitle" id="topbar-date"></span>
+      </div>
+      <div class="topbar-right">
+        <a href="/estoque.html" class="btn btn-primary btn-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Novo produto
+        </a>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- KPIs -->
+      <section class="page-section">
+        <div class="grid-4" id="kpi-grid">
+          <div class="kpi-card" style="--kpi-accent:var(--c-green);--kpi-icon-bg:#f0faf5;--kpi-icon-color:#059669">
+            <div class="kpi-header">
+              <span class="kpi-label">Receita do mês</span>
+              <div class="kpi-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+              </div>
+            </div>
+            <div class="kpi-value" id="kpi-entradas">—</div>
+            <div class="kpi-footer">Este mês</div>
+          </div>
+
+          <div class="kpi-card" style="--kpi-accent:var(--c-danger);--kpi-icon-bg:#fef2f2;--kpi-icon-color:#dc2626">
+            <div class="kpi-header">
+              <span class="kpi-label">Despesas do mês</span>
+              <div class="kpi-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+              </div>
+            </div>
+            <div class="kpi-value" id="kpi-saidas">—</div>
+            <div class="kpi-footer">Este mês</div>
+          </div>
+
+          <div class="kpi-card" style="--kpi-accent:var(--c-teal);--kpi-icon-bg:var(--c-teal-light);--kpi-icon-color:var(--c-teal)">
+            <div class="kpi-header">
+              <span class="kpi-label">Lucro estimado</span>
+              <div class="kpi-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+              </div>
+            </div>
+            <div class="kpi-value" id="kpi-lucro">—</div>
+            <div class="kpi-footer">Este mês</div>
+          </div>
+
+          <div class="kpi-card" style="--kpi-accent:var(--c-navy);--kpi-icon-bg:#eef2f7;--kpi-icon-color:var(--c-navy)">
+            <div class="kpi-header">
+              <span class="kpi-label">Itens em estoque</span>
+              <div class="kpi-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+              </div>
+            </div>
+            <div class="kpi-value" id="kpi-estoque">—</div>
+            <div class="kpi-footer" id="kpi-estoque-footer">produtos cadastrados</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Alertas e gráfico -->
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:var(--sp-5);margin-bottom:var(--sp-8)">
+
+        <!-- Gráfico -->
+        <div class="card card-padded">
+          <div class="section-header" style="margin-bottom:var(--sp-5)">
+            <h2 class="section-title">Fluxo de caixa</h2>
+            <span class="badge badge-teal">Últimos 6 meses</span>
+          </div>
+          <div class="chart-container" style="height:220px">
+            <canvas id="cashflow-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Alertas de estoque -->
+        <div class="card card-padded" style="display:flex;flex-direction:column;gap:var(--sp-4)">
+          <div class="section-header" style="margin-bottom:0">
+            <h2 class="section-title">Alertas de estoque</h2>
+          </div>
+          <div id="alertas-list" style="display:flex;flex-direction:column;gap:var(--sp-3);flex:1">
+            <div class="loading-state">
+              <div class="spinner"></div> Carregando...
+            </div>
+          </div>
+          <a href="/estoque.html" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center">Ver estoque completo</a>
+        </div>
+      </div>
+
+      <!-- Resumo parceiros -->
+      <section class="page-section">
+        <div class="section-header">
+          <h2 class="section-title">Parceiros ativos</h2>
+          <a href="/parceiros.html" class="btn btn-ghost btn-sm">Ver todos</a>
+        </div>
+        <div id="parceiros-resumo" class="grid-3">
+          <div class="loading-state" style="grid-column:1/-1"><div class="spinner"></div> Carregando...</div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/dashboard.js"></script>
+</body>
+</html>

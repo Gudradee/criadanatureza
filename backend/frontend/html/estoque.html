@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estoque — CDN</title>
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/layout.css" />
+  <link rel="stylesheet" href="/static/css/components.css" />
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🌿</div>
+      <div class="logo-text">
+        <span class="logo-title">CDN</span>
+        <span class="logo-sub">Cria da Natureza</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item" data-page="dashboard">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="/estoque.html" class="nav-item active" data-page="estoque">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        Estoque
+      </a>
+      <a href="/parceiros.html" class="nav-item" data-page="parceiros">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Parceiros
+      </a>
+      <a href="/financeiro.html" class="nav-item" data-page="financeiro">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Financeiro
+      </a>
+      <a href="/configuracoes.html" class="nav-item" data-page="config">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Configurações
+      </a>
+      <a href="/apresentacao-landings.html" class="nav-item" data-page="apresentacao">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Apresentação
+      </a>
+    </nav>
+    <div class="sidebar-footer"><p class="sidebar-version">CDN v1.0 · 2025</p></div>
+  </aside>
+
+  <div class="sidebar-overlay overlay" id="sidebarOverlay"></div>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="sidebar-toggle btn btn-ghost btn-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-left">
+        <h1 class="page-title">Estoque</h1>
+        <span class="page-subtitle" id="estoque-count">carregando...</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary btn-sm" onclick="abrirModalProduto()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Novo produto
+        </button>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- Toolbar -->
+      <div class="card card-padded" style="margin-bottom:var(--sp-5)">
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <div class="search-bar" style="flex:1;max-width:320px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input class="form-input" id="busca-input" placeholder="Buscar produto..." type="search" />
+            </div>
+            <select class="form-select" id="categoria-filter" style="width:180px;height:40px">
+              <option value="">Todas categorias</option>
+            </select>
+          </div>
+          <div class="toolbar-right">
+            <span id="filtro-status" class="badge badge-teal" style="display:none"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabela de produtos -->
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Categoria</th>
+              <th>Preço custo</th>
+              <th>Preço venda</th>
+              <th>Estoque</th>
+              <th>Status</th>
+              <th style="width:120px">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="produtos-tbody">
+            <tr><td colspan="7" class="loading-state"><div class="spinner"></div> Carregando produtos...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Modal: Produto -->
+<div class="modal-backdrop" id="modal-produto">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-produto-title">Novo produto</h2>
+      <button class="modal-close" onclick="closeModal('modal-produto')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="produto-id" />
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label required">Nome do produto</label>
+          <input class="form-input" id="produto-nome" placeholder="Ex: Shampoo Vegano 250ml" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <select class="form-select" id="produto-categoria">
+            <option value="">Sem categoria</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descrição</label>
+        <textarea class="form-textarea" id="produto-descricao" placeholder="Descrição opcional do produto..."></textarea>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label required">Quantidade</label>
+          <input class="form-input" id="produto-quantidade" type="number" min="0" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estoque mínimo</label>
+          <input class="form-input" id="produto-minimo" type="number" min="0" placeholder="5" />
+        </div>
+        <div class="form-group" style="display:none" id="grupo-ajuste-tipo">
+          <label class="form-label">Tipo de ajuste</label>
+          <select class="form-select" id="produto-ajuste-tipo">
+            <option value="ajuste">Definir quantidade</option>
+            <option value="entrada">Adicionar ao estoque</option>
+            <option value="saida">Remover do estoque</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Preço de custo (R$)</label>
+          <input class="form-input" id="produto-custo" type="number" min="0" step="0.01" placeholder="0,00" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Preço de venda (R$)</label>
+          <input class="form-input" id="produto-venda" type="number" min="0" step="0.01" placeholder="0,00" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-produto')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-produto" onclick="salvarProduto()">Salvar produto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ajuste de estoque rápido -->
+<div class="modal-backdrop" id="modal-ajuste">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Ajustar estoque</h2>
+      <button class="modal-close" onclick="closeModal('modal-ajuste')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);margin-bottom:var(--sp-5)">
+        Produto: <strong id="ajuste-produto-nome" style="color:var(--c-text-1)"></strong>
+        · Atual: <strong id="ajuste-qtd-atual"></strong> unidades
+      </p>
+      <input type="hidden" id="ajuste-produto-id" />
+      <div class="form-group">
+        <label class="form-label required">Tipo de movimentação</label>
+        <select class="form-select" id="ajuste-tipo">
+          <option value="entrada">Entrada — adicionar ao estoque</option>
+          <option value="saida">Saída — remover do estoque</option>
+          <option value="ajuste">Ajuste — definir quantidade exata</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label required">Quantidade</label>
+        <input class="form-input" id="ajuste-quantidade" type="number" min="1" placeholder="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Motivo (opcional)</label>
+        <input class="form-input" id="ajuste-motivo" placeholder="Ex: Recebimento de fornecedor, brinde, etc." />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-ajuste')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarAjuste()">Confirmar ajuste</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/estoque.js"></script>
+</body>
+</html>
