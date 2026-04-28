@@ -179,8 +179,8 @@ def create_app():
     app = Flask(
         __name__,
         template_folder="templates",
-        static_folder=os.path.join(FRONTEND_DIR, "css"),
-        static_url_path="/static/css",
+        static_folder=FRONTEND_DIR,
+        static_url_path="/static",
     )
 
     # ── Configurações de sessão ───────────────────────────────────────────────
