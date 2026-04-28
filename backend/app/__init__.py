@@ -73,12 +73,18 @@ def _migrate_db():
     from sqlalchemy import text, inspect
     db = SessionLocal()
     try:
-        cols = [c["name"] for c in inspect(engine).get_columns("parceiros")]
-        if "comissao_percentual" not in cols:
+        cols_parceiros = [c["name"] for c in inspect(engine).get_columns("parceiros")]
+        if "comissao_percentual" not in cols_parceiros:
             db.execute(text("ALTER TABLE parceiros ADD COLUMN comissao_percentual REAL NOT NULL DEFAULT 0.0"))
             db.execute(text("UPDATE parceiros SET comissao_percentual = 0.02"))
             db.commit()
             print("[CDN] Migração: comissao_percentual adicionado (2% para parceiros existentes).")
+
+        cols_mov = [c["name"] for c in inspect(engine).get_columns("movimentacoes_financeiras")]
+        if "parceiro_id" not in cols_mov:
+            db.execute(text("ALTER TABLE movimentacoes_financeiras ADD COLUMN parceiro_id INTEGER REFERENCES parceiros(id)"))
+            db.commit()
+            print("[CDN] Migração: parceiro_id adicionado em movimentacoes_financeiras.")
     except Exception as e:
         db.rollback()
         print(f"[CDN] Erro na migração: {e}")
