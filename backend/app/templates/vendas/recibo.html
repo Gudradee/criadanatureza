@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Recibo #{{ venda.id }}{% endblock %}
+{% block page_title %}Recibo{% endblock %}
+{% block page_subtitle %}Venda #{{ venda.id }} confirmada{% endblock %}
+
+{% block topbar_actions %}
+<a href="/vendas/nova" class="btn btn-primary btn-sm">+ Nova venda</a>
+<a href="/caixa/historico" class="btn btn-ghost btn-sm">Histórico</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:640px;margin:0 auto">
+  <div class="card card-padded">
+
+    <!-- Cabeçalho -->
+    <div style="text-align:center;margin-bottom:var(--sp-6);padding-bottom:var(--sp-5);border-bottom:1px solid var(--c-border-soft)">
+      <div style="width:56px;height:56px;background:#f0fdf4;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto var(--sp-3)">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2 style="font-size:var(--text-xl);font-weight:700;color:#059669;margin-bottom:var(--sp-1)">Venda registrada!</h2>
+      <p style="font-size:var(--text-sm);color:var(--c-text-3)">
+        {{ venda.data_venda.strftime('%d/%m/%Y às %H:%M') if venda.data_venda else '—' }}
+      </p>
+    </div>
+
+    <!-- Metadados -->
+    <div style="display:flex;flex-wrap:wrap;gap:var(--sp-3);margin-bottom:var(--sp-5)">
+      {% if venda.metodo_recebimento %}
+      <div style="flex:1;min-width:150px;background:var(--bg-subtle);border-radius:var(--r-md);padding:var(--sp-3)">
+        <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:2px">Método de recebimento</p>
+        <p style="font-weight:600;font-size:var(--text-sm)">{{ venda.metodo_recebimento.nome }}</p>
+      </div>
+      {% elif venda.forma_pagamento %}
+      <div style="flex:1;min-width:150px;background:var(--bg-subtle);border-radius:var(--r-md);padding:var(--sp-3)">
+        <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:2px">Forma de pagamento</p>
+        <p style="font-weight:600;font-size:var(--text-sm)">{{ venda.forma_pagamento }}</p>
+      </div>
+      {% endif %}
+
+      {% if venda.ponto_venda %}
+      <div style="flex:1;min-width:150px;background:var(--bg-subtle);border-radius:var(--r-md);padding:var(--sp-3)">
+        <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:2px">Ponto de venda</p>
+        <p style="font-weight:600;font-size:var(--text-sm)">{{ venda.ponto_venda.nome }}</p>
+      </div>
+      {% endif %}
+
+      {% if venda.parceiro %}
+      <div style="flex:1;min-width:150px;background:var(--bg-subtle);border-radius:var(--r-md);padding:var(--sp-3)">
+        <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:2px">Parceiro</p>
+        <p style="font-weight:600;font-size:var(--text-sm)">{{ venda.parceiro.nome }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Itens -->
+    <div class="table-wrapper" style="margin-bottom:var(--sp-5)">
+      <table>
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th style="text-align:center">Qtd.</th>
+            <th style="text-align:right">Preço unit.</th>
+            <th style="text-align:right">Desconto</th>
+            <th style="text-align:right">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in venda.itens %}
+          <tr>
+            <td style="font-weight:500">{{ item.nome_produto }}</td>
+            <td style="text-align:center">{{ item.quantidade }}</td>
+            <td style="text-align:right">{{ item.preco_unitario_bruto | brl }}</td>
+            <td style="text-align:right;color:#dc2626">
+              {% if item.desconto_valor > 0 %}−{{ item.desconto_valor | brl }}{% else %}—{% endif %}
+            </td>
+            <td style="text-align:right;font-weight:600;color:#059669">{{ item.subtotal_liquido | brl }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" style="text-align:right;color:var(--c-text-3);font-size:var(--text-sm)">Subtotal bruto</td>
+            <td style="text-align:right">{{ venda.valor_total_bruto | brl }}</td>
+          </tr>
+          {% if venda.valor_total_desconto > 0 %}
+          <tr>
+            <td colspan="4" style="text-align:right;color:#dc2626;font-size:var(--text-sm)">Descontos</td>
+            <td style="text-align:right;color:#dc2626">−{{ venda.valor_total_desconto | brl }}</td>
+          </tr>
+          {% endif %}
+          <tr style="border-top:2px solid var(--border-color)">
+            <td colspan="4" style="text-align:right;font-weight:700">Total líquido</td>
+            <td style="text-align:right;font-weight:700;font-size:var(--text-xl);color:#059669">
+              {{ venda.valor_total_liquido | brl }}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    {% if venda.observacoes %}
+    <p style="font-size:var(--text-sm);color:var(--c-text-3);padding:var(--sp-3);background:var(--bg-subtle);border-radius:var(--r-md)">
+      <strong>Obs.:</strong> {{ venda.observacoes }}
+    </p>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

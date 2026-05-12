@@ -32,6 +32,19 @@ class RoleUsuario(str, enum.Enum):
     parceiro = "parceiro"
 
 
+class TipoPontoVenda(str, enum.Enum):
+    presencial = "presencial"
+    online     = "online"
+    outro      = "outro"
+
+
+class TipoDespesa(str, enum.Enum):
+    fixo     = "fixo"
+    variavel = "variavel"
+
+
+# ── Associação: produtos por catálogo de parceiro ──────────────────────────────
+
 produto_parceiro = Table(
     "produtos_parceiros",
     Base.metadata,
@@ -117,10 +130,11 @@ class Parceiro(Base):
     criado_em            = Column(DateTime(timezone=True), server_default=func.now())
 
     usuario          = relationship("Usuario", back_populates="parceiro", uselist=False)
-    envios           = relationship("Envio",     back_populates="parceiro")
-    vendas           = relationship("Venda",     back_populates="parceiro")
-    devolucoes       = relationship("Devolucao", back_populates="parceiro")
-    pre_vendas       = relationship("PreVenda",  back_populates="parceiro")
+    envios           = relationship("Envio",      back_populates="parceiro")
+    vendas           = relationship("Venda",      back_populates="parceiro")
+    devolucoes       = relationship("Devolucao",  back_populates="parceiro")
+    pre_vendas       = relationship("PreVenda",   back_populates="parceiro")
+    vendas_finais    = relationship("VendaFinal", back_populates="parceiro")
     produtos_catalogo = relationship("Produto", secondary=produto_parceiro, back_populates="parceiros_catalogo")
     solicitacoes_devolucao = relationship("SolicitacaoDevolucao", back_populates="parceiro")
 
@@ -200,6 +214,59 @@ class ItemDevolucao(Base):
     produto        = relationship("Produto",   back_populates="devolucoes")
 
 
+# ── Métodos de recebimento do parceiro (isolados por parceiro) ────────────────
+
+class MetodoParceiro(Base):
+    """
+    Formas de pagamento cadastradas pelo próprio parceiro.
+    Jamais aparecem para outros parceiros — filtradas sempre por parceiro_id.
+    """
+    __tablename__ = "metodos_parceiro"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    parceiro_id = Column(Integer, ForeignKey("parceiros.id"), nullable=False)
+    nome        = Column(String(100), nullable=False)
+    criado_em   = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# ── Métodos de recebimento (admin — globais) ──────────────────────────────────
+
+class MetodoRecebimento(Base):
+    """
+    Formas de pagamento aceitas (PIX, dinheiro, cartão etc.).
+    Cadastradas pelo admin e reutilizadas em todas as vendas.
+    """
+    __tablename__ = "metodos_recebimento"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    nome            = Column(String(100), nullable=False)
+    taxa_percentual = Column(Float, default=0.0, nullable=False)
+    ativo           = Column(Boolean, default=True, nullable=False)
+    criado_em       = Column(DateTime(timezone=True), server_default=func.now())
+
+    vendas = relationship("VendaFinal", back_populates="metodo_recebimento")
+
+
+# ── Pontos de venda ───────────────────────────────────────────────────────────
+
+class PontoVenda(Base):
+    """
+    Locais/canais onde as vendas acontecem (loja, feira, online etc.).
+    """
+    __tablename__ = "pontos_venda"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    nome        = Column(String(200), nullable=False)
+    localizacao = Column(String(300), nullable=True)
+    tipo        = Column(String(20), default="presencial", nullable=False)
+    ativo       = Column(Boolean, default=True, nullable=False)
+    criado_em   = Column(DateTime(timezone=True), server_default=func.now())
+
+    vendas = relationship("VendaFinal", back_populates="ponto_venda")
+
+
+# ── Financeiro ────────────────────────────────────────────────────────────────
+
 class MovimentacaoFinanceira(Base):
     __tablename__ = "movimentacoes_financeiras"
 
@@ -248,17 +315,23 @@ class ItemPreVenda(Base):
 class VendaFinal(Base):
     __tablename__ = "vendas_finais"
 
-    id                   = Column(Integer, primary_key=True, index=True)
-    pre_venda_id         = Column(Integer, ForeignKey("pre_vendas.id"), nullable=True)
-    data_venda           = Column(DateTime(timezone=True), server_default=func.now())
-    forma_pagamento      = Column(String(50), nullable=True)
-    valor_total_bruto    = Column(Float, nullable=False)
-    valor_total_desconto = Column(Float, default=0.0)
-    valor_total_liquido  = Column(Float, nullable=False)
-    observacoes          = Column(Text, nullable=True)
+    id                      = Column(Integer, primary_key=True, index=True)
+    pre_venda_id            = Column(Integer, ForeignKey("pre_vendas.id"), nullable=True)
+    metodo_recebimento_id   = Column(Integer, ForeignKey("metodos_recebimento.id"), nullable=True)
+    ponto_venda_id          = Column(Integer, ForeignKey("pontos_venda.id"), nullable=True)
+    parceiro_id             = Column(Integer, ForeignKey("parceiros.id"), nullable=True)
+    data_venda              = Column(DateTime(timezone=True), server_default=func.now())
+    forma_pagamento         = Column(String(50), nullable=True)
+    valor_total_bruto       = Column(Float, nullable=False)
+    valor_total_desconto    = Column(Float, default=0.0)
+    valor_total_liquido     = Column(Float, nullable=False)
+    observacoes             = Column(Text, nullable=True)
 
-    pre_venda = relationship("PreVenda",      back_populates="venda_final")
-    itens     = relationship("ItemVendaFinal", back_populates="venda", cascade="all, delete-orphan")
+    pre_venda          = relationship("PreVenda",           back_populates="venda_final")
+    metodo_recebimento = relationship("MetodoRecebimento",  back_populates="vendas")
+    ponto_venda        = relationship("PontoVenda",         back_populates="vendas")
+    parceiro           = relationship("Parceiro",           back_populates="vendas_finais")
+    itens              = relationship("ItemVendaFinal",     back_populates="venda", cascade="all, delete-orphan")
 
 
 class ItemVendaFinal(Base):
@@ -305,3 +378,42 @@ class ItemSolicitacaoDevolucao(Base):
 
     solicitacao = relationship("SolicitacaoDevolucao", back_populates="itens")
     produto     = relationship("Produto")
+
+
+# ── Despesas ──────────────────────────────────────────────────────────────────
+
+class DespesaFixa(Base):
+    """
+    Template de custo fixo recorrente (aluguel, mensalidade etc.).
+    O valor_padrao serve como sugestão ao criar instâncias mensais.
+    """
+    __tablename__ = "despesas_fixas"
+
+    id           = Column(Integer, primary_key=True, index=True)
+    descricao    = Column(String(300), nullable=False)
+    valor_padrao = Column(Float, nullable=False)
+    categoria    = Column(String(100), nullable=True)
+    ativo        = Column(Boolean, default=True, nullable=False)
+    criado_em    = Column(DateTime(timezone=True), server_default=func.now())
+
+    instancias = relationship("Despesa", back_populates="despesa_fixa")
+
+
+class Despesa(Base):
+    """
+    Registro de despesa para um mês específico.
+    - tipo='fixo'    → gerada a partir de um DespesaFixa (despesa_fixa_id preenchido)
+    - tipo='variavel' → cadastrada manualmente, despesa_fixa_id é NULL
+    """
+    __tablename__ = "despesas"
+
+    id               = Column(Integer, primary_key=True, index=True)
+    descricao        = Column(String(300), nullable=False)
+    valor            = Column(Float, nullable=False)
+    tipo             = Column(String(20), nullable=False)   # fixo | variavel
+    categoria        = Column(String(100), nullable=True)
+    data_competencia = Column(DateTime(timezone=True), nullable=False)
+    despesa_fixa_id  = Column(Integer, ForeignKey("despesas_fixas.id"), nullable=True)
+    criado_em        = Column(DateTime(timezone=True), server_default=func.now())
+
+    despesa_fixa = relationship("DespesaFixa", back_populates="instancias")

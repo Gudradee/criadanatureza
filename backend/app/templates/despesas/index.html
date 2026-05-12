@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Despesas{% endblock %}
+{% block page_title %}Despesas{% endblock %}
+{% block page_subtitle %}Gestão de custos fixos e variáveis{% endblock %}
+
+{% block topbar_actions %}
+<form method="GET" action="/despesas" style="display:flex;gap:var(--sp-2);align-items:center">
+  <select name="mes_num" class="form-select" style="width:130px;height:36px">
+    {% for n,l in [(1,'Janeiro'),(2,'Fevereiro'),(3,'Março'),(4,'Abril'),(5,'Maio'),(6,'Junho'),(7,'Julho'),(8,'Agosto'),(9,'Setembro'),(10,'Outubro'),(11,'Novembro'),(12,'Dezembro')] %}
+    <option value="{{ n }}" {% if n == mes %}selected{% endif %}>{{ l }}</option>
+    {% endfor %}
+  </select>
+  <select name="mes_ano" class="form-select" style="width:85px;height:36px">
+    {% for y in range(2023, ano + 3) %}
+    <option value="{{ y }}" {% if y == ano %}selected{% endif %}>{{ y }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-secondary btn-sm" style="height:36px">Filtrar</button>
+</form>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 320px;gap:var(--sp-6);align-items:start">
+
+  <!-- ── Coluna principal: despesas do mês ─────────────────────── -->
+  <div>
+
+    <!-- Cards de resumo do mês -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4);margin-bottom:var(--sp-6)">
+      <div class="kpi-card" style="--kpi-accent:#dc2626;--kpi-icon-bg:#fef2f2;--kpi-icon-color:#dc2626">
+        <div class="kpi-header">
+          <span class="kpi-label">Custos fixos</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        </div>
+        <div class="kpi-value" style="color:#dc2626">{{ total_fixo | brl }}</div>
+        <div class="kpi-footer">{{ mes }}/{{ ano }}</div>
+      </div>
+      <div class="kpi-card" style="--kpi-accent:#f59e0b;--kpi-icon-bg:#fffbeb;--kpi-icon-color:#d97706">
+        <div class="kpi-header">
+          <span class="kpi-label">Custos variáveis</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        </div>
+        <div class="kpi-value" style="color:#d97706">{{ total_variavel | brl }}</div>
+        <div class="kpi-footer">{{ mes }}/{{ ano }}</div>
+      </div>
+      <div class="kpi-card" style="--kpi-accent:#7c3aed;--kpi-icon-bg:#f5f3ff;--kpi-icon-color:#7c3aed">
+        <div class="kpi-header">
+          <span class="kpi-label">Total do mês</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+        </div>
+        <div class="kpi-value" style="color:#7c3aed">{{ total_mes | brl }}</div>
+        <div class="kpi-footer">{{ mes }}/{{ ano }}</div>
+      </div>
+    </div>
+
+    <!-- Ações do mês -->
+    <div style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-5);align-items:center">
+      <h2 class="section-title" style="flex:1;margin:0">
+        Despesas de {{ "%02d"|format(mes) }}/{{ ano }}
+      </h2>
+      <form method="POST" action="/despesas/importar-fixas"
+            onsubmit="return confirm('Importar todos os custos fixos ativos para {{ '%02d'|format(mes) }}/{{ ano }}?')">
+        <input type="hidden" name="mes_referencia" value="{{ mes_str }}" />
+        <button type="submit" class="btn btn-secondary btn-sm">
+          ↓ Importar custos fixos
+        </button>
+      </form>
+    </div>
+
+    <!-- Lista de despesas do mês -->
+    {% if despesas %}
+    <div class="card" style="margin-bottom:var(--sp-5)">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Descrição</th>
+              <th>Categoria</th>
+              <th style="text-align:right">Valor</th>
+              <th style="width:50px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in despesas %}
+            <tr>
+              <td>
+                {% if d.tipo == 'fixo' %}
+                <span class="badge" style="background:#fef2f2;color:#dc2626">Fixo</span>
+                {% else %}
+                <span class="badge" style="background:#fffbeb;color:#d97706">Variável</span>
+                {% endif %}
+              </td>
+              <td style="font-weight:500">{{ d.descricao }}</td>
+              <td><span class="category-tag">{{ d.categoria or '—' }}</span></td>
+              <td style="text-align:right;font-weight:600;color:#dc2626">{{ d.valor | brl }}</td>
+              <td>
+                <form method="POST" action="/despesas/{{ d.id }}/deletar"
+                      onsubmit="return confirm('Excluir esta despesa?')">
+                  <input type="hidden" name="mes_referencia" value="{{ mes_str }}" />
+                  <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr style="border-top:2px solid var(--border-color);font-weight:700">
+              <td colspan="3">Total</td>
+              <td style="text-align:right;color:#dc2626">{{ total_mes | brl }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="card card-padded" style="text-align:center;margin-bottom:var(--sp-5)">
+      <p style="color:var(--c-text-3);padding:var(--sp-6)">
+        Nenhuma despesa registrada para {{ "%02d"|format(mes) }}/{{ ano }}.<br>
+        Adicione uma despesa ou importe os custos fixos.
+      </p>
+    </div>
+    {% endif %}
+
+    <!-- Formulário: nova despesa variável -->
+    <div class="card card-padded">
+      <h3 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-4)">Adicionar despesa</h3>
+      <form method="POST" action="/despesas/nova">
+        <input type="hidden" name="mes_referencia" value="{{ mes_str }}" />
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:var(--sp-3)">
+          <div class="form-group" style="margin:0">
+            <label class="form-label required">Descrição</label>
+            <input class="form-input" name="descricao" placeholder="Ex: Compra de embalagens..." required />
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label required">Valor (R$)</label>
+            <input class="form-input" name="valor" type="number" min="0.01" step="0.01" placeholder="0,00" required />
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Categoria</label>
+            <input class="form-input" name="categoria" placeholder="Ex: Material, Frete..." />
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Tipo</label>
+            <select class="form-select" name="tipo">
+              <option value="variavel">Variável</option>
+              <option value="fixo">Fixo (avulso)</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:var(--sp-3);display:flex;justify-content:flex-end">
+          <button type="submit" class="btn btn-primary">Adicionar despesa</button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+
+  <!-- ── Coluna lateral: templates de custos fixos ─────────────── -->
+  <div>
+    <div class="card card-padded">
+      <h3 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-1)">Custos fixos cadastrados</h3>
+      <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:var(--sp-4)">
+        Esses custos são salvos permanentemente e podem ser importados para qualquer mês.
+      </p>
+
+      <!-- Novo custo fixo -->
+      <form method="POST" action="/despesas/fixas/nova" style="margin-bottom:var(--sp-5)">
+        <input type="hidden" name="mes_referencia" value="{{ mes_str }}" />
+        <div class="form-group">
+          <label class="form-label required">Descrição</label>
+          <input class="form-input" name="descricao" placeholder="Ex: Aluguel do espaço..." required />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)">
+          <div class="form-group" style="margin:0">
+            <label class="form-label required">Valor padrão (R$)</label>
+            <input class="form-input" name="valor_padrao" type="number" min="0.01" step="0.01" placeholder="0,00" required />
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Categoria</label>
+            <input class="form-input" name="categoria" placeholder="Ex: Aluguel..." />
+          </div>
+        </div>
+        <div style="margin-top:var(--sp-3)">
+          <button type="submit" class="btn btn-secondary" style="width:100%;justify-content:center">
+            + Cadastrar custo fixo
+          </button>
+        </div>
+      </form>
+
+      <!-- Lista de custos fixos -->
+      {% if fixas %}
+        {% for f in fixas %}
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:var(--sp-3) 0;border-top:1px solid var(--c-border-soft);gap:var(--sp-2)">
+          <div style="flex:1;min-width:0">
+            <p style="font-weight:500;font-size:var(--text-sm);margin-bottom:2px">{{ f.descricao }}</p>
+            <div style="display:flex;gap:var(--sp-2);align-items:center;flex-wrap:wrap">
+              <span style="font-size:var(--text-xs);color:#dc2626;font-weight:600">{{ f.valor_padrao | brl }}</span>
+              {% if f.categoria %}<span class="category-tag">{{ f.categoria }}</span>{% endif %}
+              {% if not f.ativo %}<span class="badge badge-warning">Inativo</span>{% endif %}
+              {% if f.id in ids_importados %}
+              <span class="badge badge-teal" style="font-size:10px">✓ Importado</span>
+              {% endif %}
+            </div>
+          </div>
+          {% if f.ativo %}
+          <form method="POST" action="/despesas/fixas/{{ f.id }}/deletar"
+                onsubmit="return confirm('Desativar este custo fixo?')">
+            <input type="hidden" name="mes_referencia" value="{{ mes_str }}" />
+            <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)" title="Desativar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);text-align:center;padding:var(--sp-4)">
+        Nenhum custo fixo cadastrado.
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

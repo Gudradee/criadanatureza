@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Venda{% endblock %}
+{% block page_title %}Nova Venda{% endblock %}
+{% block page_subtitle %}Registro manual de venda{% endblock %}
+
+{% block topbar_actions %}
+<a href="/caixa" class="btn btn-ghost btn-sm">← Voltar ao caixa</a>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 340px;gap:var(--sp-6);align-items:start">
+
+  <!-- ── Formulário principal ──────────────────────────────────────── -->
+  <div>
+
+    <!-- Adicionar produto -->
+    <div class="card card-padded" style="margin-bottom:var(--sp-5)">
+      <h2 class="section-title" style="margin-bottom:var(--sp-4)">Adicionar produto</h2>
+
+      <div style="display:grid;grid-template-columns:2fr 80px 130px auto;gap:var(--sp-3);align-items:flex-end">
+        <div class="form-group" style="margin:0">
+          <label class="form-label required">Produto</label>
+          <select id="prod-select" class="form-select">
+            <option value="">— selecione —</option>
+            {% for item in produtos %}
+            <option value="{{ item.produto.id }}"
+                    data-preco="{{ item.produto.preco_venda }}"
+                    data-max="{{ item.quantidade_disponivel }}">
+              {{ item.produto.nome }}
+              ({{ item.quantidade_disponivel }} disp.)
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label required">Qtd.</label>
+          <input id="prod-qty" class="form-input" type="number" min="1" value="1" />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label required">Preço unit. (R$)</label>
+          <input id="prod-preco" class="form-input" type="number" min="0" step="0.01" placeholder="0,00" />
+        </div>
+        <div>
+          <button type="button" onclick="adicionarItem()" class="btn btn-primary">
+            + Adicionar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela de itens -->
+    <div class="card" style="margin-bottom:var(--sp-5)">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th style="text-align:center;width:60px">Qtd.</th>
+              <th style="text-align:right">Preço unit.</th>
+              <th style="text-align:right">Subtotal</th>
+              <th style="width:40px"></th>
+            </tr>
+          </thead>
+          <tbody id="items-tbody">
+            <tr id="empty-row">
+              <td colspan="5" style="text-align:center;padding:var(--sp-8);color:var(--c-text-3)">
+                Nenhum produto adicionado ainda.
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr style="border-top:2px solid var(--border-color)">
+              <td colspan="2"></td>
+              <td style="text-align:right;font-size:var(--text-sm);color:var(--c-text-3)">Subtotal bruto</td>
+              <td style="text-align:right;font-weight:600" id="total-bruto">R$ 0,00</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td colspan="2"></td>
+              <td style="text-align:right;font-size:var(--text-sm);color:#dc2626">Desconto</td>
+              <td style="text-align:right;color:#dc2626" id="total-desconto">R$ 0,00</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td colspan="2"></td>
+              <td style="text-align:right;font-size:var(--text-sm);font-weight:700">Total líquido</td>
+              <td style="text-align:right;font-weight:700;font-size:var(--text-lg);color:#059669" id="total-liquido">R$ 0,00</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Painel lateral: dados da venda ─────────────────────────── -->
+  <form method="POST" action="/vendas/nova" id="form-venda">
+    <div id="hidden-inputs"></div>
+
+    <div class="card card-padded" style="margin-bottom:var(--sp-4)">
+      <h3 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-4)">Dados da venda</h3>
+
+      <div class="form-group">
+        <label class="form-label">Método de recebimento</label>
+        {% if is_admin %}
+        <select class="form-select" name="metodo_recebimento_id">
+          <option value="">— não informado —</option>
+          {% for m in metodos %}
+          <option value="{{ m.id }}">
+            {{ m.nome }}{% if m.taxa_percentual > 0 %} ({{ "%.1f"|format(m.taxa_percentual * 100) }}%){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+        {% if not metodos %}
+        <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-top:var(--sp-1)">
+          Nenhum método cadastrado. <a href="/configuracoes" style="color:var(--c-teal)">Cadastrar →</a>
+        </p>
+        {% endif %}
+        {% else %}
+        <select class="form-select" name="forma_pagamento">
+          <option value="">— não informado —</option>
+          {% for m in metodos_parceiro %}
+          <option value="{{ m.nome }}">{{ m.nome }}</option>
+          {% endfor %}
+        </select>
+        {% if not metodos_parceiro %}
+        <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-top:var(--sp-1)">
+          Nenhum método cadastrado. <a href="/minhas-configuracoes" style="color:var(--c-teal)">Cadastrar →</a>
+        </p>
+        {% endif %}
+        {% endif %}
+      </div>
+
+      {% if is_admin %}
+      <div class="form-group">
+        <label class="form-label">Ponto de venda</label>
+        <select class="form-select" name="ponto_venda_id">
+          <option value="">— não informado —</option>
+          {% for p in pontos %}
+          <option value="{{ p.id }}">{{ p.nome }}</option>
+          {% endfor %}
+        </select>
+        {% if not pontos %}
+        <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-top:var(--sp-1)">
+          Nenhum ponto cadastrado. <a href="/configuracoes" style="color:var(--c-teal)">Cadastrar →</a>
+        </p>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if is_admin and parceiros %}
+      <div class="form-group">
+        <label class="form-label">Parceiro (venda consignada)</label>
+        <select class="form-select" name="parceiro_id">
+          <option value="">— venda direta (almoxarifado) —</option>
+          {% for p in parceiros %}
+          <option value="{{ p.id }}">{{ p.nome }}</option>
+          {% endfor %}
+        </select>
+        <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-top:var(--sp-1)">
+          Se selecionar um parceiro, o estoque será debitado do estoque dele, não do almoxarifado.
+        </p>
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label class="form-label">Desconto total (R$)</label>
+        <input class="form-input" id="input-desconto-total" name="desconto_total"
+               type="number" min="0" step="0.01" value="0" placeholder="0,00"
+               oninput="atualizarTotais()" />
+        <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-top:var(--sp-1)">
+          Aplicado sobre o valor total da venda.
+        </p>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Observações</label>
+        <textarea class="form-input" name="observacoes" rows="2" placeholder="Opcional..."></textarea>
+      </div>
+    </div>
+
+    <button type="button" onclick="submeterVenda()" class="btn btn-primary" style="width:100%;justify-content:center;font-size:var(--text-base);padding:var(--sp-3)">
+      Confirmar venda
+    </button>
+
+  </form>
+</div>
+
+<script>
+  const produtos = {
+    {% for item in produtos %}
+    {{ item.produto.id }}: {
+      nome: {{ item.produto.nome | tojson }},
+      preco: {{ item.produto.preco_venda }},
+      max: {{ item.quantidade_disponivel }}
+    },
+    {% endfor %}
+  };
+
+  let itens = [];
+
+  const selectProd = document.getElementById('prod-select');
+  const inputPreco = document.getElementById('prod-preco');
+
+  selectProd.addEventListener('change', function () {
+    const pid = parseInt(this.value);
+    if (pid && produtos[pid]) {
+      inputPreco.value = produtos[pid].preco.toFixed(2);
+    } else {
+      inputPreco.value = '';
+    }
+  });
+
+  function brl(valor) {
+    return 'R$ ' + valor.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
+  function adicionarItem() {
+    const pid   = parseInt(selectProd.value);
+    const qty   = parseInt(document.getElementById('prod-qty').value);
+    const preco = parseFloat(document.getElementById('prod-preco').value.replace(',', '.'));
+
+    if (!pid) { alert('Selecione um produto.'); return; }
+    if (!qty || qty < 1) { alert('Informe uma quantidade válida.'); return; }
+    if (isNaN(preco) || preco < 0) { alert('Informe um preço válido.'); return; }
+
+    const maxQty  = produtos[pid] ? produtos[pid].max : 9999;
+    const existIdx = itens.findIndex(i => i.produto_id === pid);
+
+    if (existIdx >= 0) {
+      const novaQty = itens[existIdx].quantidade + qty;
+      if (novaQty > maxQty) {
+        alert('Quantidade excede o estoque disponível (' + maxQty + ').');
+        return;
+      }
+      itens[existIdx].quantidade = novaQty;
+      itens[existIdx].preco      = preco;
+    } else {
+      if (qty > maxQty) {
+        alert('Quantidade excede o estoque disponível (' + maxQty + ').');
+        return;
+      }
+      itens.push({
+        produto_id: pid,
+        nome:       produtos[pid] ? produtos[pid].nome : 'Produto ' + pid,
+        quantidade: qty,
+        preco:      preco,
+      });
+    }
+
+    renderItens();
+    document.getElementById('prod-qty').value = '1';
+    inputPreco.value = '';
+    selectProd.value = '';
+  }
+
+  function removerItem(idx) {
+    itens.splice(idx, 1);
+    renderItens();
+  }
+
+  function totalBrutoCalc() {
+    return itens.reduce((s, item) => s + item.preco * item.quantidade, 0);
+  }
+
+  function atualizarTotais() {
+    const bruto = totalBrutoCalc();
+    const desc  = Math.max(0, Math.min(
+      parseFloat(document.getElementById('input-desconto-total').value || '0'),
+      bruto
+    ));
+    const liq = bruto - desc;
+
+    document.getElementById('total-bruto').textContent    = brl(bruto);
+    document.getElementById('total-desconto').textContent = desc > 0 ? '−' + brl(desc) : 'R$ 0,00';
+    document.getElementById('total-liquido').textContent  = brl(liq);
+  }
+
+  function renderItens() {
+    const tbody           = document.getElementById('items-tbody');
+    const hiddenContainer = document.getElementById('hidden-inputs');
+
+    tbody.innerHTML           = '';
+    hiddenContainer.innerHTML = '';
+
+    if (itens.length === 0) {
+      tbody.appendChild(Object.assign(document.createElement('tr'), {
+        id: 'empty-row',
+        innerHTML: '<td colspan="5" style="text-align:center;padding:var(--sp-8);color:var(--c-text-3)">Nenhum produto adicionado ainda.</td>'
+      }));
+      document.getElementById('total-bruto').textContent    = 'R$ 0,00';
+      document.getElementById('total-desconto').textContent = 'R$ 0,00';
+      document.getElementById('total-liquido').textContent  = 'R$ 0,00';
+      return;
+    }
+
+    itens.forEach((item, i) => {
+      const subBruto = item.preco * item.quantidade;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:500">${item.nome}</td>
+        <td style="text-align:center">${item.quantidade}</td>
+        <td style="text-align:right">${brl(item.preco)}</td>
+        <td style="text-align:right;font-weight:600">${brl(subBruto)}</td>
+        <td>
+          <button type="button" onclick="removerItem(${i})"
+            style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:1.1rem;line-height:1;padding:2px 6px"
+            title="Remover">×</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+
+      hiddenContainer.innerHTML += `
+        <input type="hidden" name="produto_id[]"     value="${item.produto_id}">
+        <input type="hidden" name="quantidade[]"     value="${item.quantidade}">
+        <input type="hidden" name="preco_unitario[]" value="${item.preco}">
+      `;
+    });
+
+    atualizarTotais();
+  }
+
+  function submeterVenda() {
+    if (itens.length === 0) {
+      alert('Adicione ao menos um produto antes de confirmar a venda.');
+      return;
+    }
+    document.getElementById('form-venda').submit();
+  }
+</script>
+{% endblock %}

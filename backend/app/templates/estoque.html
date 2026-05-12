@@ -13,6 +13,128 @@
 {% endblock %}
 
 {% block content %}
+
+<!-- Popup backdrop -->
+<div id="popup-backdrop" onclick="fecharPopup()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100"></div>
+
+<!-- Popup: estoque próprio -->
+<div id="popup-estoque-admin" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:var(--r-lg);box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:101;width:min(520px,92vw);max-height:70vh;display:none;flex-direction:column">
+  <div style="padding:var(--sp-5) var(--sp-6);border-bottom:1px solid var(--c-border-soft);display:flex;justify-content:space-between;align-items:center">
+    <h3 style="margin:0;font-size:var(--text-base);font-weight:700">Estoque próprio</h3>
+    <button onclick="fecharPopup()" style="background:none;border:none;cursor:pointer;color:var(--c-text-3);font-size:18px;line-height:1">✕</button>
+  </div>
+  <div style="overflow-y:auto;flex:1;padding:var(--sp-3) var(--sp-6)">
+    {% if todos_produtos %}
+    {% for p in todos_produtos %}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+      <div>
+        <span style="font-size:var(--text-sm);font-weight:500">{{ p.nome }}</span>
+        {% if p.categoria %}<span class="category-tag" style="margin-left:var(--sp-2)">{{ p.categoria.nome }}</span>{% endif %}
+      </div>
+      <div style="display:flex;align-items:center;gap:var(--sp-3)">
+        <span style="font-weight:700;font-size:var(--text-base)">{{ p.quantidade }}</span>
+        {% if p.quantidade <= p.estoque_minimo %}
+        <span class="badge badge-warning">Baixo</span>
+        {% else %}
+        <span class="badge badge-teal">OK</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p style="text-align:center;color:var(--c-text-3);padding:var(--sp-8)">Nenhum produto cadastrado.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Popups: estoque por parceiro -->
+{% for pe in parceiros_estoque %}
+<div id="popup-parceiro-{{ pe.parceiro.id }}" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:var(--r-lg);box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:101;width:min(520px,92vw);max-height:70vh;flex-direction:column">
+  <div style="padding:var(--sp-5) var(--sp-6);border-bottom:1px solid var(--c-border-soft);display:flex;justify-content:space-between;align-items:center">
+    <h3 style="margin:0;font-size:var(--text-base);font-weight:700">Estoque — {{ pe.parceiro.nome }}</h3>
+    <button onclick="fecharPopup()" style="background:none;border:none;cursor:pointer;color:var(--c-text-3);font-size:18px;line-height:1">✕</button>
+  </div>
+  <div style="overflow-y:auto;flex:1;padding:var(--sp-3) var(--sp-6)">
+    {% if pe.itens %}
+    {% for item in pe.itens %}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+      <span style="font-size:var(--text-sm);font-weight:500">{{ item.nome }}</span>
+      <span style="font-weight:700;font-size:var(--text-base)">{{ item.quantidade }} un.</span>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p style="text-align:center;color:var(--c-text-3);padding:var(--sp-8)">Nenhum item em mãos.</p>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+
+<!-- Cards de estoque (admin + parceiros) -->
+<section class="page-section">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5);margin-bottom:var(--sp-5)">
+
+    <!-- Card: estoque próprio -->
+    <div class="card card-padded" style="cursor:pointer;transition:box-shadow .15s" onclick="abrirPopup('popup-estoque-admin')" title="Ver estoque">
+      <div style="display:flex;align-items:center;gap:var(--sp-4)">
+        <div style="background:var(--c-teal-light);border-radius:var(--r-md);padding:var(--sp-3)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-teal)" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        </div>
+        <div>
+          <div style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:2px">Estoque próprio</div>
+          <div style="font-size:var(--text-lg);font-weight:700">{{ todos_produtos | length }} produto(s)</div>
+          <div style="font-size:var(--text-sm);font-weight:600;color:var(--c-text-1);margin-top:3px">{{ total_itens_admin }} itens no total</div>
+          <div style="font-size:var(--text-xs);color:var(--c-teal);margin-top:2px">Clique para ver detalhes →</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: estoque de parceiros -->
+    <div class="card card-padded">
+      <div style="display:flex;align-items:center;gap:var(--sp-4);margin-bottom:var(--sp-4)">
+        <div style="background:#eef2f7;border-radius:var(--r-md);padding:var(--sp-3)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-navy)" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <div>
+          <div style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:2px">Estoque de parceiros</div>
+          <div style="font-size:var(--text-lg);font-weight:700">{{ parceiros_estoque | length }} parceiro(s)</div>
+          <div style="font-size:var(--text-sm);font-weight:600;color:var(--c-text-1);margin-top:3px">{{ total_itens_parceiros }} itens em consignação</div>
+        </div>
+      </div>
+      {% if parceiros_estoque %}
+      <div style="display:flex;flex-direction:column;gap:var(--sp-2)">
+        {% for pe in parceiros_estoque %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:var(--sp-2) var(--sp-3);background:var(--bg-subtle);border-radius:var(--r-md)">
+          <div>
+            <span style="font-size:var(--text-sm);font-weight:500">{{ pe.parceiro.nome }}</span>
+            <span style="font-size:var(--text-xs);color:var(--c-text-3);margin-left:var(--sp-2)">· {% set ns = namespace(tot=0) %}{% for it in pe.itens %}{% set ns.tot = ns.tot + it.quantidade %}{% endfor %}{{ ns.tot }} itens</span>
+          </div>
+          <button onclick="abrirPopup('popup-parceiro-{{ pe.parceiro.id }}')" class="btn btn-ghost btn-sm" style="font-size:var(--text-xs)">
+            Ver estoque
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);text-align:center;padding:var(--sp-3)">Nenhum parceiro ativo.</p>
+      {% endif %}
+    </div>
+
+  </div>
+</section>
+
+<script>
+function abrirPopup(id){
+  document.getElementById('popup-backdrop').style.display='block';
+  var el=document.getElementById(id);
+  el.style.display='flex';
+}
+function fecharPopup(){
+  document.getElementById('popup-backdrop').style.display='none';
+  document.querySelectorAll('[id^="popup-"]').forEach(function(el){el.style.display='none';});
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')fecharPopup();});
+</script>
+
 <!-- Barra de busca -->
 <div class="card card-padded" style="margin-bottom:var(--sp-5)">
   <form method="GET" action="/estoque">

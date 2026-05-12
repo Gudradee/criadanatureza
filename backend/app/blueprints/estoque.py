@@ -1,7 +1,9 @@
 import os
 import secrets
+from collections import defaultdict
 
 from flask import Blueprint, render_template, request, redirect, flash
+from sqlalchemy.orm import joinedload
 
 from ..database import get_db
 from .. import models
@@ -31,6 +33,45 @@ def _categorias(db):
     return db.query(models.Categoria).order_by(models.Categoria.nome).all()
 
 
+def _estoque_parceiro(parceiro, db):
+    """
+    Retorna lista de {nome, produto_id, quantidade} representando
+    o estoque atual (em mãos) do parceiro.
+    """
+    enviado   = defaultdict(int)
+    vendido   = defaultdict(int)
+    devolvido = defaultdict(int)
+
+    for envio in parceiro.envios:
+        for item in envio.itens:
+            enviado[item.produto_id] += item.quantidade
+
+    for vf in (
+        db.query(models.VendaFinal)
+        .filter(models.VendaFinal.parceiro_id == parceiro.id)
+        .options(joinedload(models.VendaFinal.itens))
+        .all()
+    ):
+        for item in vf.itens:
+            vendido[item.produto_id] += item.quantidade
+
+    for dev in parceiro.devolucoes:
+        for item in dev.itens:
+            devolvido[item.produto_id] += item.quantidade
+
+    produto_map = {p.id: p.nome for p in db.query(models.Produto).all()}
+    resultado = []
+    for pid, qtd_env in enviado.items():
+        em_maos = max(qtd_env - vendido[pid] - devolvido[pid], 0)
+        resultado.append({
+            "produto_id": pid,
+            "nome": produto_map.get(pid, f"Produto #{pid}"),
+            "quantidade": em_maos,
+        })
+    resultado.sort(key=lambda x: x["nome"])
+    return resultado
+
+
 # ── Listagem e busca de produtos ──────────────────────────────────────────────
 
 @bp.route("")
@@ -47,12 +88,41 @@ def listar():
         query = query.filter(models.Produto.categoria_id == categoria_id)
     produtos = query.order_by(models.Produto.nome).all()
 
+    # Todos os produtos com estoque (para popup)
+    todos_produtos = db.query(models.Produto).order_by(models.Produto.nome).all()
+
+    # Parceiros ativos com estoque em mãos
+    parceiros = (
+        db.query(models.Parceiro)
+        .options(
+            joinedload(models.Parceiro.envios).joinedload(models.Envio.itens),
+            joinedload(models.Parceiro.devolucoes).joinedload(models.Devolucao.itens),
+        )
+        .filter(models.Parceiro.status == "ativo")
+        .order_by(models.Parceiro.nome)
+        .all()
+    )
+    parceiros_estoque = [
+        {"parceiro": p, "itens": _estoque_parceiro(p, db)}
+        for p in parceiros
+    ]
+
+    total_itens_admin = sum(p.quantidade for p in todos_produtos)
+    total_itens_parceiros = sum(
+        sum(item["quantidade"] for item in pe["itens"])
+        for pe in parceiros_estoque
+    )
+
     return render_template("estoque.html",
         active_page="estoque",
         produtos=produtos,
         categorias=_categorias(db),
         busca=busca,
         categoria_id=categoria_id,
+        todos_produtos=todos_produtos,
+        parceiros_estoque=parceiros_estoque,
+        total_itens_admin=total_itens_admin,
+        total_itens_parceiros=total_itens_parceiros,
     )
 
 

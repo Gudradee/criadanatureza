@@ -3,59 +3,433 @@
 {% block title %}Financeiro{% endblock %}
 
 {% block page_title %}Financeiro{% endblock %}
-{% block page_subtitle %}Fluxo de caixa e transações{% endblock %}
+{% block page_subtitle %}Receita, despesas e faturamento{% endblock %}
+
+{% block topbar_actions %}
+{% if is_admin %}
+<form method="GET" action="/financeiro#kpis-admin" style="display:flex;gap:var(--sp-2);align-items:center">
+  <input type="hidden" name="chart_aba"        value="{{ chart_aba }}"/>
+  <input type="hidden" name="chart_ano"        value="{{ chart_ano_c }}"/>
+  {% if chart_produto_id_c  %}<input type="hidden" name="chart_produto_id"  value="{{ chart_produto_id_c }}"/>{% endif %}
+  {% if chart_so_parceiros  %}<input type="hidden" name="chart_so_parceiros" value="1"/>{% endif %}
+  {% if ponto_id_filtro     %}<input type="hidden" name="ponto_id"           value="{{ ponto_id_filtro }}"/>{% endif %}
+  {% if metodo_id_filtro    %}<input type="hidden" name="metodo_id"          value="{{ metodo_id_filtro }}"/>{% endif %}
+  {% if so_parceiros_prod   %}<input type="hidden" name="so_parceiros"       value="1"/>{% endif %}
+  <select name="mes_num" class="form-select" style="width:130px;height:36px">
+    {% for n,l in [(1,'Janeiro'),(2,'Fevereiro'),(3,'Março'),(4,'Abril'),(5,'Maio'),(6,'Junho'),(7,'Julho'),(8,'Agosto'),(9,'Setembro'),(10,'Outubro'),(11,'Novembro'),(12,'Dezembro')] %}
+    <option value="{{ n }}" {% if n == mes %}selected{% endif %}>{{ l }}</option>
+    {% endfor %}
+  </select>
+  <select name="mes_ano" class="form-select" style="width:85px;height:36px">
+    {% for y in range(2023, ano + 3) %}
+    <option value="{{ y }}" {% if y == ano %}selected{% endif %}>{{ y }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-secondary btn-sm" style="height:36px">Filtrar</button>
+</form>
+{% endif %}
+{% endblock %}
 
 {% block content %}
-<!-- KPIs -->
+
 {% if is_admin %}
-<div class="grid-4" style="margin-bottom:var(--sp-6);grid-template-columns:repeat(5,1fr)">
+<!-- ── Análise Anual ──────────────────────────────────────────────────────── -->
+<div id="grafico-anual" class="card card-padded" style="margin-bottom:var(--sp-6)">
+
+  <!-- Controles: abas + filtros (formulário puro GET) -->
+  <form method="GET" action="/financeiro#grafico-anual" style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-5);flex-wrap:wrap">
+    <input type="hidden" name="mes"    value="{{ mes_str }}"/>
+    {% if ponto_id_filtro  %}<input type="hidden" name="ponto_id"    value="{{ ponto_id_filtro }}"/>{% endif %}
+    {% if metodo_id_filtro %}<input type="hidden" name="metodo_id"   value="{{ metodo_id_filtro }}"/>{% endif %}
+    {% if so_parceiros_prod %}<input type="hidden" name="so_parceiros" value="1"/>{% endif %}
+
+    <!-- Abas como botões de submit -->
+    {% set tab_base = "padding:6px 14px;border:none;border-radius:6px;font-size:var(--text-sm);font-weight:600;cursor:pointer" %}
+    <div style="display:flex;gap:2px;background:var(--bg-subtle);border-radius:var(--r-md);padding:3px">
+      <button type="submit" name="chart_aba" value="faturamento"
+        style="{{ tab_base }};{% if chart_aba=='faturamento' %}background:rgba(56,163,165,1);color:#fff{% else %}background:transparent;color:var(--c-text-3){% endif %}">
+        Faturamento
+      </button>
+      <button type="submit" name="chart_aba" value="despesas"
+        style="{{ tab_base }};{% if chart_aba=='despesas' %}background:#dc2626;color:#fff{% else %}background:transparent;color:var(--c-text-3){% endif %}">
+        Despesas
+      </button>
+      <button type="submit" name="chart_aba" value="balanco"
+        style="{{ tab_base }};{% if chart_aba=='balanco' %}background:#6d28d9;color:#fff{% else %}background:transparent;color:var(--c-text-3){% endif %}">
+        Balanço
+      </button>
+      <button type="submit" name="chart_aba" value="por_local"
+        style="{{ tab_base }};{% if chart_aba=='por_local' %}background:#d97706;color:#fff{% else %}background:transparent;color:var(--c-text-3){% endif %}">
+        Por local
+      </button>
+    </div>
+
+    <!-- Filtro: ano -->
+    <select name="chart_ano" class="form-select" style="width:88px;height:36px;font-size:var(--text-sm)">
+      {% for y in range(2023, chart_ano_c + 3) %}
+      <option value="{{ y }}" {% if y == chart_ano_c %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Filtro: produto -->
+    <select name="chart_produto_id" class="form-select" style="width:200px;height:36px;font-size:var(--text-sm)">
+      <option value="">Todos os produtos</option>
+      {% for p in todos_produtos_chart %}
+      <option value="{{ p.id }}" {% if chart_produto_id_c == p.id %}selected{% endif %}>{{ p.nome }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Filtro: só parceiros -->
+    <select name="chart_so_parceiros" class="form-select" style="width:150px;height:36px;font-size:var(--text-sm)">
+      <option value="">Todos os canais</option>
+      <option value="1" {% if chart_so_parceiros %}selected{% endif %}>Só parceiros</option>
+    </select>
+
+    <!-- Botão aplicar -->
+    <button type="submit" name="chart_aba" value="{{ chart_aba }}" class="btn btn-secondary btn-sm" style="height:36px">
+      Aplicar
+    </button>
+
+    <!-- Totalizador -->
+    <div style="margin-left:auto;font-size:var(--text-xs);color:var(--c-text-3);white-space:nowrap;text-align:right">
+      {% if chart_aba == 'faturamento' %}
+        <span style="display:block;color:var(--c-text-3)">Total bruto</span>
+        <span style="font-weight:700;color:#059669;font-size:var(--text-sm)">{{ chart_totais.fat | brl }}</span>
+      {% elif chart_aba == 'despesas' %}
+        <span style="display:block;color:var(--c-text-3)">Total despesas</span>
+        <span style="font-weight:700;color:#dc2626;font-size:var(--text-sm)">{{ chart_totais.desp | brl }}</span>
+      {% elif chart_aba == 'por_local' %}
+        <span style="display:block;color:var(--c-text-3)">Total por local</span>
+        <span style="font-weight:700;color:#059669;font-size:var(--text-sm)">{{ chart_totais.local | brl }}</span>
+      {% else %}
+        <span style="display:block">Entradas: <strong style="color:#059669">{{ chart_totais.ent | brl }}</strong></span>
+        <span style="display:block">Saídas: <strong style="color:#dc2626">{{ chart_totais.sai | brl }}</strong></span>
+        <span style="display:block">Resultado: <strong style="color:#38a3a5">{{ chart_totais.res | brl }}</strong></span>
+      {% endif %}
+    </div>
+  </form>
+
+  <!-- Gráfico SVG (renderizado no servidor, sem JavaScript) -->
+  {% if chart_aba in ('faturamento', 'despesas') %}
+  {# Barras mensais — tooltip via CSS hover #}
+  <svg viewBox="0 0 {{ chart_svg.w }} {{ chart_svg.h }}" style="width:100%;height:260px;display:block;overflow:visible">
+    <style>
+      .bar-g .tip-rect { opacity:0; }
+      .bar-g .tip-txt  { opacity:0; }
+      .bar-g:hover .tip-rect { opacity:1; }
+      .bar-g:hover .tip-txt  { opacity:1; }
+    </style>
+    {% for t in chart_svg.ticks %}
+    <line x1="{{ chart_svg.pl }}" y1="{{ t.y }}" x2="{{ chart_svg.w - chart_svg.pr }}" y2="{{ t.y }}"
+          stroke="#e8ecf0" stroke-width="1"/>
+    <text x="{{ chart_svg.pl - 5 }}" y="{{ t.y + 4 }}"
+          text-anchor="end" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif">{{ t.label }}</text>
+    {% endfor %}
+    <line x1="{{ chart_svg.pl }}" y1="{{ chart_svg.pb }}" x2="{{ chart_svg.w - chart_svg.pr }}" y2="{{ chart_svg.pb }}"
+          stroke="#d1d5db" stroke-width="1"/>
+    {% for b in chart_svg.bars %}
+    <g class="bar-g">
+      {# Área clicável invisível para ativar o hover mesmo em barras pequenas #}
+      <rect x="{{ b.x }}" y="{{ chart_svg.pl * 0 + 0 }}" width="{{ b.w if b.h > 0 else b.w + 1 }}"
+            height="{{ chart_svg.pb }}" fill="transparent"/>
+      {% if b.h > 0 %}
+      <rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}"
+            fill="{{ chart_svg.cf }}" stroke="{{ chart_svg.cs }}" stroke-width="0.5" rx="3"/>
+      {% endif %}
+      <text x="{{ b.lx }}" y="{{ chart_svg.ay }}"
+            text-anchor="middle" font-size="10" fill="#6b7280" font-family="system-ui,sans-serif">{{ b.mes }}</text>
+      {# Tooltip flutuante #}
+      <rect class="tip-rect" x="{{ b.lx - 32 }}" y="{{ b.y - 22 }}" width="64" height="18"
+            rx="4" fill="#1f2937" opacity="0"/>
+      <text class="tip-txt" x="{{ b.lx }}" y="{{ b.y - 9 }}"
+            text-anchor="middle" font-size="10" font-weight="600" fill="#fff"
+            font-family="system-ui,sans-serif">{{ b.val | brl }}</text>
+    </g>
+    {% endfor %}
+  </svg>
+
+  {% elif chart_aba == 'por_local' %}
+  {# Barras horizontais por local #}
+  {% if chart_svg %}
+  <svg viewBox="0 0 {{ chart_svg.sw }} {{ chart_svg.sh }}"
+       style="width:100%;display:block">
+    <style>
+      .hbar-g .hbar-rect { transition: opacity .1s; }
+      .hbar-g:hover .hbar-rect { opacity:1 !important; filter:brightness(1.08); }
+    </style>
+    {# Grid vertical #}
+    {% for t in chart_svg.ticks_x %}
+    <line x1="{{ t.x }}" y1="{{ chart_svg.pt }}" x2="{{ t.x }}" y2="{{ chart_svg.grid_btm }}"
+          stroke="#e8ecf0" stroke-width="1"/>
+    <text x="{{ t.x }}" y="{{ chart_svg.label_y }}"
+          text-anchor="middle" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif">{{ t.label }}</text>
+    {% endfor %}
+    {# Eixo Y (linha vertical esquerda) #}
+    <line x1="{{ chart_svg.pl }}" y1="{{ chart_svg.pt }}" x2="{{ chart_svg.pl }}" y2="{{ chart_svg.grid_btm }}"
+          stroke="#d1d5db" stroke-width="1"/>
+    {# Barras #}
+    {% for b in chart_svg.bars %}
+    <g class="hbar-g">
+      <text x="{{ chart_svg.pl - 10 }}" y="{{ b.ty }}"
+            text-anchor="end" font-size="12" fill="#374151" font-family="system-ui,sans-serif"
+            font-weight="500">{{ b.label }}</text>
+      {% if b.w > 0 %}
+      <rect class="hbar-rect" x="{{ chart_svg.pl }}" y="{{ b.y }}"
+            width="{{ b.w }}" height="{{ b.bar_h }}"
+            fill="rgba(56,163,165,0.72)" stroke="rgba(56,163,165,1)" stroke-width="0.5" rx="5"/>
+      <text x="{{ b.vx }}" y="{{ b.ty }}"
+            font-size="12" font-weight="700" fill="#059669" font-family="system-ui,sans-serif">{{ b.value | brl }}</text>
+      {% endif %}
+    </g>
+    {% endfor %}
+  </svg>
+  {% else %}
+  <div style="text-align:center;padding:var(--sp-10);color:var(--c-text-3);font-size:var(--text-sm)">
+    Nenhuma venda por local registrada em {{ chart_ano_c }}.
+  </div>
+  {% endif %}
+
+  {% else %}
+  {# Linhas (Balanço) — tooltip nos dots via CSS hover #}
+  <svg viewBox="0 0 {{ chart_svg.w }} {{ chart_svg.h }}" style="width:100%;height:260px;display:block;overflow:visible">
+    <style>
+      .dot-g .tip-rect { opacity:0; }
+      .dot-g .tip-txt  { opacity:0; }
+      .dot-g:hover .tip-rect { opacity:1; }
+      .dot-g:hover .tip-txt  { opacity:1; }
+      .dot-g:hover circle    { r:5; }
+    </style>
+    {% for t in chart_svg.ticks %}
+    <line x1="{{ chart_svg.pl }}" y1="{{ t.y }}" x2="{{ chart_svg.w - chart_svg.pr }}" y2="{{ t.y }}"
+          stroke="#e8ecf0" stroke-width="1"/>
+    <text x="{{ chart_svg.pl - 5 }}" y="{{ t.y + 4 }}"
+          text-anchor="end" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif">{{ t.label }}</text>
+    {% endfor %}
+    <line x1="{{ chart_svg.pl }}" y1="{{ chart_svg.y0 }}" x2="{{ chart_svg.w - chart_svg.pr }}" y2="{{ chart_svg.y0 }}"
+          stroke="#d1d5db" stroke-width="1" stroke-dasharray="4,3"/>
+    {% for s in chart_svg.series %}
+    {% if s.fill_color %}
+    <polygon points="{{ s.fill_poly }}" fill="{{ s.fill_color }}"/>
+    {% endif %}
+    <polyline points="{{ s.poly }}" fill="none" stroke="{{ s.color }}" stroke-width="2"
+              stroke-linejoin="round" stroke-linecap="round"/>
+    {% for p in s.pts %}
+    <g class="dot-g">
+      <circle cx="{{ p.x }}" cy="{{ p.y }}" r="4" fill="{{ s.color }}" stroke="#fff" stroke-width="1.5"/>
+      <rect class="tip-rect" x="{{ p.x - 34 }}" y="{{ p.y - 24 }}" width="68" height="18"
+            rx="4" fill="#1f2937"/>
+      <text class="tip-txt" x="{{ p.x }}" y="{{ p.y - 11 }}"
+            text-anchor="middle" font-size="10" font-weight="600" fill="#fff"
+            font-family="system-ui,sans-serif">{{ p.val | brl }}</text>
+    </g>
+    {% endfor %}
+    {% endfor %}
+    {% for m in chart_svg.meses %}
+    <text x="{{ m.x }}" y="{{ chart_svg.ay }}"
+          text-anchor="middle" font-size="10" fill="#6b7280" font-family="system-ui,sans-serif">{{ m.label }}</text>
+    {% endfor %}
+  </svg>
+  <div style="display:flex;gap:var(--sp-5);justify-content:center;margin-top:var(--sp-3)">
+    {% for s in chart_svg.series %}
+    <div style="display:flex;align-items:center;gap:6px;font-size:var(--text-xs);color:var(--c-text-2)">
+      <div style="width:20px;height:2.5px;background:{{ s.color }};border-radius:2px"></div>
+      {{ s.label }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+{% endif %}
+
+<!-- ── KPIs admin ──────────────────────────────────────────────────── -->
+{% if is_admin %}
+<div id="kpis-admin" style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4);margin-bottom:var(--sp-6)">
+
   <div class="kpi-card" style="--kpi-accent:var(--c-green);--kpi-icon-bg:#f0faf5;--kpi-icon-color:#059669">
     <div class="kpi-header">
-      <span class="kpi-label">Faturamento total</span>
+      <span class="kpi-label">Receita bruta</span>
       <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div>
     </div>
     <div class="kpi-value">{{ resumo.total_entradas | brl }}</div>
-    <div class="kpi-footer">Mês: {{ resumo.mes_atual_entradas | brl }}</div>
+    <div class="kpi-footer">{{ mes }}/{{ ano }}: {{ resumo.mes_atual_entradas | brl }}</div>
   </div>
 
-  <div class="kpi-card" style="--kpi-accent:var(--c-danger);--kpi-icon-bg:#fef2f2;--kpi-icon-color:#dc2626">
+  <div class="kpi-card" style="--kpi-accent:#dc2626;--kpi-icon-bg:#fef2f2;--kpi-icon-color:#dc2626">
     <div class="kpi-header">
-      <span class="kpi-label">Custo de produção</span>
-      <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
-    </div>
-    <div class="kpi-value">{{ resumo.total_custo_prod | brl }}</div>
-    <div class="kpi-footer">Mês: {{ resumo.mes_atual_custo_prod | brl }}</div>
-  </div>
-
-  <div class="kpi-card" style="--kpi-accent:#f59e0b;--kpi-icon-bg:#fffbeb;--kpi-icon-color:#d97706">
-    <div class="kpi-header">
-      <span class="kpi-label">Outras despesas</span>
+      <span class="kpi-label">Despesas totais</span>
       <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg></div>
     </div>
-    <div class="kpi-value">{{ resumo.total_outras_saidas | brl }}</div>
-    <div class="kpi-footer">Mês: {{ resumo.mes_atual_outras | brl }}</div>
-  </div>
-
-  <div class="kpi-card" style="--kpi-accent:#8b5cf6;--kpi-icon-bg:#f5f3ff;--kpi-icon-color:#7c3aed">
-    <div class="kpi-header">
-      <span class="kpi-label">Comissões parceiros</span>
-      <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
-    </div>
-    <div class="kpi-value" style="color:#7c3aed">{{ resumo.total_comissoes | brl }}</div>
-    <div class="kpi-footer">Mês: {{ resumo.mes_atual_comissoes | brl }}</div>
+    <div class="kpi-value" style="color:#dc2626">{{ resumo.total_despesas | brl }}</div>
+    <div class="kpi-footer">{{ mes }}/{{ ano }}: {{ resumo.mes_atual_despesas | brl }}</div>
   </div>
 
   <div class="kpi-card" style="--kpi-accent:var(--c-teal);--kpi-icon-bg:var(--c-teal-light);--kpi-icon-color:var(--c-teal)">
     <div class="kpi-header">
-      <span class="kpi-label">Lucro real</span>
+      <span class="kpi-label">Faturamento bruto</span>
       <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
     </div>
-    <div class="kpi-value" style="color:{% if resumo.lucro_estimado >= 0 %}var(--c-teal){% else %}var(--c-danger){% endif %}">
+    <div class="kpi-value" style="color:{% if resumo.lucro_estimado >= 0 %}var(--c-teal){% else %}#dc2626{% endif %}">
       {{ resumo.lucro_estimado | brl }}
     </div>
-    <div class="kpi-footer">Mês: {{ resumo.mes_atual_lucro | brl }}</div>
+    <div class="kpi-footer">
+      Receita − Despesas. {{ mes }}/{{ ano }}: {{ resumo.mes_atual_lucro | brl }}
+    </div>
   </div>
 </div>
+
+<!-- Breakdown de despesas do mês selecionado -->
+{% if despesas_mes or resumo.mes_atual_custo_prod > 0 or resumo.mes_atual_comissoes > 0 %}
+<div class="card card-padded" style="margin-bottom:var(--sp-6)">
+  <div class="section-header" style="margin-bottom:var(--sp-4)">
+    <h2 class="section-title">Despesas de {{ "%02d"|format(mes) }}/{{ ano }}</h2>
+    <a href="/despesas?mes={{ mes_str }}" class="btn btn-ghost btn-sm">Gerenciar despesas →</a>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-4)">
+    <!-- Custo de produção (automático) -->
+    <div style="padding:var(--sp-4);background:var(--bg-subtle);border-radius:var(--r-md)">
+      <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:var(--sp-1)">Custo de produção</p>
+      <p style="font-weight:700;color:#dc2626">{{ resumo.mes_atual_custo_prod | brl }}</p>
+      <p style="font-size:var(--text-xs);color:var(--c-text-3)">Calculado automaticamente</p>
+    </div>
+    <!-- Comissões (automático) -->
+    <div style="padding:var(--sp-4);background:var(--bg-subtle);border-radius:var(--r-md)">
+      <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:var(--sp-1)">Comissões parceiros</p>
+      <p style="font-weight:700;color:#7c3aed">{{ resumo.mes_atual_comissoes | brl }}</p>
+      <p style="font-size:var(--text-xs);color:var(--c-text-3)">Calculado automaticamente</p>
+    </div>
+    <!-- Despesas manuais -->
+    <div style="padding:var(--sp-4);background:var(--bg-subtle);border-radius:var(--r-md)">
+      <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:var(--sp-1)">Despesas manuais</p>
+      <p style="font-weight:700;color:#d97706">{{ resumo.mes_atual_despesas_manual | brl }}</p>
+      <div style="display:flex;gap:var(--sp-2);font-size:10px;color:var(--c-text-3);margin-top:2px">
+        <span>Fixas: {{ total_despesas_fixo | brl }}</span>
+        <span>·</span>
+        <span>Variáveis: {{ total_despesas_variavel | brl }}</span>
+      </div>
+    </div>
+  </div>
+  {% if despesas_mes %}
+  <div class="table-wrapper" style="margin-top:var(--sp-4)">
+    <table>
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Descrição</th>
+          <th>Categoria</th>
+          <th style="text-align:right">Valor</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in despesas_mes %}
+        <tr>
+          <td>
+            {% if d.tipo == 'fixo' %}
+            <span class="badge" style="background:#fef2f2;color:#dc2626">Fixo</span>
+            {% else %}
+            <span class="badge" style="background:#fffbeb;color:#d97706">Variável</span>
+            {% endif %}
+          </td>
+          <td style="font-size:var(--text-sm)">{{ d.descricao }}</td>
+          <td><span class="category-tag">{{ d.categoria or '—' }}</span></td>
+          <td style="text-align:right;font-weight:600;color:#dc2626">{{ d.valor | brl }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Faturamento por produto -->
+{% if fat_por_produto or pontos or metodos %}
+<div id="fat-produto" class="card card-padded" style="margin-bottom:var(--sp-6)">
+
+  <!-- Cabeçalho + filtros (formulário GET preservando todos os params) -->
+  <form method="GET" action="/financeiro#fat-produto"
+        style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);margin-bottom:var(--sp-4);flex-wrap:nowrap">
+    <input type="hidden" name="chart_aba"   value="{{ chart_aba or 'faturamento' }}"/>
+    <input type="hidden" name="chart_ano"   value="{{ chart_ano_c }}"/>
+    <input type="hidden" name="mes"         value="{{ mes_str }}"/>
+    {% if chart_produto_id_c %}<input type="hidden" name="chart_produto_id"  value="{{ chart_produto_id_c }}"/>{% endif %}
+    {% if chart_so_parceiros %}<input type="hidden" name="chart_so_parceiros" value="1"/>{% endif %}
+
+    <h2 class="section-title" style="margin:0">Faturamento por produto</h2>
+
+    <div style="display:flex;gap:var(--sp-2);align-items:center;flex-wrap:nowrap">
+      {% if pontos %}
+      <select name="ponto_id" class="form-select" style="height:32px;font-size:var(--text-xs);width:auto;max-width:150px"
+              onchange="this.form.submit()">
+        <option value="">Todos os pontos</option>
+        {% for p in pontos %}
+        <option value="{{ p.id }}" {% if ponto_id_filtro == p.id %}selected{% endif %}>{{ p.nome }}</option>
+        {% endfor %}
+      </select>
+      {% endif %}
+      {% if metodos %}
+      <select name="metodo_id" class="form-select" style="height:32px;font-size:var(--text-xs);width:auto;max-width:140px"
+              onchange="this.form.submit()">
+        <option value="">Todos os métodos</option>
+        {% for m in metodos %}
+        <option value="{{ m.id }}" {% if metodo_id_filtro == m.id %}selected{% endif %}>{{ m.nome }}</option>
+        {% endfor %}
+      </select>
+      {% endif %}
+      <select name="so_parceiros" class="form-select" style="height:32px;font-size:var(--text-xs);width:auto;max-width:130px"
+              onchange="this.form.submit()">
+        <option value="">Todos os canais</option>
+        <option value="1" {% if so_parceiros_prod %}selected{% endif %}>Só parceiros</option>
+      </select>
+    </div>
+  </form>
+
+  {% if fat_por_produto %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th style="text-align:center">Qtd. vendida</th>
+          <th style="text-align:right">Faturamento</th>
+          <th style="text-align:right;width:130px">% do total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in fat_por_produto %}
+        <tr>
+          <td style="font-weight:500">{{ p.nome }}</td>
+          <td style="text-align:center">{{ p.total_vendido }}</td>
+          <td style="text-align:right;font-weight:600;color:#059669">{{ p.faturamento | brl }}</td>
+          <td style="text-align:right">
+            <div style="display:flex;align-items:center;justify-content:flex-end;gap:var(--sp-2)">
+              <div style="width:64px;height:6px;background:var(--c-border-soft);border-radius:3px;overflow:hidden;flex-shrink:0">
+                <div style="height:100%;width:{{ p.percentual }}%;background:var(--c-teal);border-radius:3px"></div>
+              </div>
+              <span style="font-size:var(--text-xs);color:var(--c-text-3);width:40px;text-align:right">{{ p.percentual }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="border-top:2px solid var(--border-color);font-weight:700">
+          <td>Total</td>
+          <td style="text-align:center">{{ fat_por_produto | sum(attribute='total_vendido') }}</td>
+          <td style="text-align:right;color:#059669">{{ fat_por_produto | sum(attribute='faturamento') | brl }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {% else %}
+  <p style="text-align:center;padding:var(--sp-8);color:var(--c-text-3);font-size:var(--text-sm)">
+    Nenhuma venda encontrada com os filtros selecionados.
+  </p>
+  {% endif %}
+</div>
+{% endif %}
+
 {% else %}
 {# KPIs para parceiro: receita das vendas + lucro real (% comissão sobre receita) #}
 <div class="grid-4" style="margin-bottom:var(--sp-6);grid-template-columns:repeat(2,1fr);max-width:560px">
@@ -198,7 +572,8 @@
         <tbody>
           {% if transacoes %}
             {% for t in transacoes %}
-            <tr>
+            {% set eh_parceiro = is_admin and t.parceiro_id and t.parceiro %}
+            <tr style="{% if eh_parceiro %}background:rgba(56,163,165,0.06);border-left:3px solid rgba(56,163,165,0.35){% endif %}">
               <td>
                 {% if t.tipo == 'entrada' %}
                 <span class="badge" style="background:#f0faf5;color:#059669">Entrada</span>
@@ -206,7 +581,17 @@
                 <span class="badge" style="background:#fef2f2;color:#dc2626">Saída</span>
                 {% endif %}
               </td>
-              <td style="font-size:var(--text-sm)">{{ t.descricao }}</td>
+              <td style="font-size:var(--text-sm)">
+                {{ t.descricao }}
+                {% if eh_parceiro %}
+                <div style="margin-top:3px">
+                  <a href="/parceiros/{{ t.parceiro.id }}"
+                     style="font-size:10px;background:rgba(56,163,165,0.12);color:var(--c-teal);border-radius:4px;padding:1px 7px;font-weight:600;text-decoration:none;display:inline-block">
+                    ↗ {{ t.parceiro.nome }}
+                  </a>
+                </div>
+                {% endif %}
+              </td>
               <td><span class="category-tag">{{ t.categoria or '—' }}</span></td>
               <td style="font-size:var(--text-xs);color:var(--c-text-3)">{{ t.data.strftime('%d/%m/%Y') if t.data else '—' }}</td>
               <td style="text-align:right;font-weight:600;{% if t.tipo == 'entrada' %}color:#059669{% else %}color:#dc2626{% endif %}">
@@ -214,11 +599,13 @@
               </td>
               {% if is_admin %}
               <td>
+                {% if t.id %}
                 <form method="POST" action="/financeiro/{{ t.id }}/deletar" onsubmit="return confirm('Excluir esta transação?')" style="display:inline">
                   <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Excluir" style="color:var(--c-danger)">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
                   </button>
                 </form>
+                {% endif %}
               </td>
               {% else %}
               <td></td>
@@ -270,4 +657,118 @@
   </div>
   {% endif %}
 </div>
+
+{% if False %}{# bloco removido — sem JavaScript #}
+<script>
+(function(){
+  var _chart = null;
+  var _aba   = 'faturamento';
+  var _dados = null;
+  var MESES  = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+  function brl(v){
+    return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+
+  window.setAba = function(aba){
+    _aba = aba;
+    var corMap = {faturamento:'rgba(56,163,165,1)',despesas:'#dc2626',balanco:'#6d28d9'};
+    ['fat','desp','bal'].forEach(function(t){
+      var b=document.getElementById('tab-'+t);
+      b.style.background='transparent'; b.style.color='var(--c-text-3)';
+    });
+    var idMap = {faturamento:'fat',despesas:'desp',balanco:'bal'};
+    var b=document.getElementById('tab-'+idMap[aba]);
+    b.style.background=corMap[aba]; b.style.color='#fff';
+    if(_dados) renderizar(_dados);
+  };
+
+  window.carregarDados = function(){
+    var ano = document.getElementById('chart-ano').value;
+    var pid = document.getElementById('chart-produto').value;
+    fetch('/financeiro/anual?ano='+ano+'&produto_id='+pid)
+      .then(function(r){return r.json();})
+      .then(function(d){
+        _dados = d;
+        if(!pid){
+          var sel=document.getElementById('chart-produto');
+          var val=sel.value;
+          sel.innerHTML='<option value="">Todos os produtos</option>';
+          (d.produtos||[]).forEach(function(p){
+            var o=document.createElement('option');
+            o.value=p.id; o.text=p.nome; sel.appendChild(o);
+          });
+          sel.value=val;
+        }
+        renderizar(d);
+      });
+  };
+
+  function opcoesBase(){
+    return {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{boxWidth:12,font:{size:12}}},
+        tooltip:{callbacks:{label:function(c){return ' '+brl(c.parsed.y);}}}
+      },
+      scales:{
+        y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.05)'},
+           ticks:{callback:function(v){
+             if(v>=1000) return 'R$ '+(v/1000).toFixed(0)+'k';
+             return brl(v);
+           },font:{size:11},maxTicksLimit:6}},
+        x:{grid:{display:false},ticks:{font:{size:11}}}
+      }
+    };
+  }
+
+  function renderizar(d){
+    var ctx=document.getElementById('grafico-anual').getContext('2d');
+    if(_chart){_chart.destroy();_chart=null;}
+
+    if(_aba==='faturamento'){
+      var tot=(d.faturamento||[]).reduce(function(a,b){return a+b;},0);
+      document.getElementById('chart-total').textContent='Total bruto: '+brl(tot);
+      _chart=new Chart(ctx,{type:'bar',
+        data:{labels:MESES,datasets:[{
+          label:'Faturamento bruto',data:d.faturamento,
+          backgroundColor:'rgba(56,163,165,0.7)',borderColor:'rgba(56,163,165,1)',
+          borderWidth:1,borderRadius:5
+        }]},options:opcoesBase()});
+
+    }else if(_aba==='despesas'){
+      var tot=(d.despesas||[]).reduce(function(a,b){return a+b;},0);
+      document.getElementById('chart-total').textContent='Total despesas: '+brl(tot);
+      _chart=new Chart(ctx,{type:'bar',
+        data:{labels:MESES,datasets:[{
+          label:'Despesas totais',data:d.despesas,
+          backgroundColor:'rgba(220,38,38,0.65)',borderColor:'rgba(220,38,38,1)',
+          borderWidth:1,borderRadius:5
+        }]},options:opcoesBase()});
+
+    }else{
+      var totE=(d.entradas||[]).reduce(function(a,b){return a+b;},0);
+      var totS=(d.saidas||[]).reduce(function(a,b){return a+b;},0);
+      var totR=(d.resultado||[]).reduce(function(a,b){return a+b;},0);
+      document.getElementById('chart-total').textContent=
+        'Entradas: '+brl(totE)+'  ·  Saídas: '+brl(totS)+'  ·  Resultado: '+brl(totR);
+      _chart=new Chart(ctx,{type:'line',
+        data:{labels:MESES,datasets:[
+          {label:'Entradas',data:d.entradas,
+           borderColor:'#059669',backgroundColor:'rgba(5,150,105,0.08)',
+           borderWidth:2,tension:0.3,fill:false,pointRadius:4},
+          {label:'Saídas',data:d.saidas,
+           borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,0.08)',
+           borderWidth:2,tension:0.3,fill:false,pointRadius:4},
+          {label:'Resultado',data:d.resultado,
+           borderColor:'rgba(56,163,165,1)',backgroundColor:'rgba(56,163,165,0.12)',
+           borderWidth:2,tension:0.3,fill:true,pointRadius:4}
+        ]},options:opcoesBase()});
+    }
+  }
+
+  carregarDados();
+})();
+</script>
+{% endif %}
 {% endblock %}
