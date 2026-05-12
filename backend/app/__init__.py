@@ -73,12 +73,34 @@ def _migrate_db():
     from sqlalchemy import text, inspect
     db = SessionLocal()
     try:
-        cols = [c["name"] for c in inspect(engine).get_columns("parceiros")]
-        if "comissao_percentual" not in cols:
+        insp = inspect(engine)
+
+        # ── parceiros ─────────────────────────────────────────────────────────
+        cols_parceiros = [c["name"] for c in insp.get_columns("parceiros")]
+        if "comissao_percentual" not in cols_parceiros:
             db.execute(text("ALTER TABLE parceiros ADD COLUMN comissao_percentual REAL NOT NULL DEFAULT 0.0"))
             db.execute(text("UPDATE parceiros SET comissao_percentual = 0.02"))
             db.commit()
-            print("[CDN] Migração: comissao_percentual adicionado (2% para parceiros existentes).")
+            print("[CDN] Migração: comissao_percentual adicionado.")
+
+        # ── vendas_finais — novas colunas pós-MVP ────────────────────────────
+        # Só aplica se a tabela já existe (criada pelo create_all numa execução anterior)
+        tabelas = insp.get_table_names()
+        if "vendas_finais" in tabelas:
+            cols_vf = [c["name"] for c in insp.get_columns("vendas_finais")]
+            if "metodo_recebimento_id" not in cols_vf:
+                db.execute(text("ALTER TABLE vendas_finais ADD COLUMN metodo_recebimento_id INTEGER REFERENCES metodos_recebimento(id)"))
+                db.commit()
+                print("[CDN] Migração: metodo_recebimento_id adicionado em vendas_finais.")
+            if "ponto_venda_id" not in cols_vf:
+                db.execute(text("ALTER TABLE vendas_finais ADD COLUMN ponto_venda_id INTEGER REFERENCES pontos_venda(id)"))
+                db.commit()
+                print("[CDN] Migração: ponto_venda_id adicionado em vendas_finais.")
+            if "parceiro_id" not in cols_vf:
+                db.execute(text("ALTER TABLE vendas_finais ADD COLUMN parceiro_id INTEGER REFERENCES parceiros(id)"))
+                db.commit()
+                print("[CDN] Migração: parceiro_id adicionado em vendas_finais.")
+
     except Exception as e:
         db.rollback()
         print(f"[CDN] Erro na migração: {e}")
@@ -212,9 +234,44 @@ def create_app():
     # ── Rotas de arquivos estáticos ───────────────────────────────────────────
     LANDING_DIR = os.path.join(FRONTEND_DIR, "landing")
 
+    @app.route("/landing/v1")
+    @app.route("/landing/v1/")
+    def landing_v1():
+        return send_from_directory(os.path.join(LANDING_DIR, "v1"), "index.html")
+
+    @app.route("/landing/v2")
+    @app.route("/landing/v2/")
+    def landing_v2():
+        return send_from_directory(os.path.join(LANDING_DIR, "v2"), "index.html")
+
     @app.route("/landing/<path:filename>")
     def landing(filename):
         return send_from_directory(LANDING_DIR, filename)
+
+    @app.route("/api/catalogo")
+    def api_catalogo():
+        from flask import jsonify
+        db = SessionLocal()
+        try:
+            produtos = (
+                db.query(models.Produto)
+                .filter(models.Produto.quantidade > 0)
+                .order_by(models.Produto.nome)
+                .all()
+            )
+            return jsonify([
+                {
+                    "id":         p.id,
+                    "nome":       p.nome,
+                    "descricao":  p.descricao or "",
+                    "preco":      p.preco_venda,
+                    "imagem":     p.imagem_url or "",
+                    "categoria":  p.categoria.nome if p.categoria else "",
+                }
+                for p in produtos
+            ])
+        finally:
+            db.close()
 
     @app.route("/uploads/<path:filename>")
     def uploads(filename):
@@ -228,9 +285,10 @@ def create_app():
     from .blueprints.parceiros     import bp as parceiros_bp
     from .blueprints.financeiro    import bp as financeiro_bp
     from .blueprints.configuracoes import bp as configuracoes_bp
-    from .blueprints.loja          import bp as loja_bp
     from .blueprints.caixa         import bp as caixa_bp
     from .blueprints.parceiro_area import bp as parceiro_area_bp
+    from .blueprints.vendas        import bp as vendas_bp
+    from .blueprints.despesas      import bp as despesas_bp
 
     app.register_blueprint(auth_bp)           # /login, /logout
     app.register_blueprint(dashboard_bp)      # / (admin)
@@ -238,8 +296,9 @@ def create_app():
     app.register_blueprint(parceiros_bp)      # /parceiros
     app.register_blueprint(financeiro_bp)     # /financeiro
     app.register_blueprint(configuracoes_bp)  # /configuracoes
-    app.register_blueprint(loja_bp)           # /loja (público)
-    app.register_blueprint(caixa_bp)          # /caixa
+    app.register_blueprint(caixa_bp)          # /caixa (histórico)
     app.register_blueprint(parceiro_area_bp)  # /meu-painel, /meu-catalogo
+    app.register_blueprint(vendas_bp)         # /vendas (venda manual)
+    app.register_blueprint(despesas_bp)       # /despesas
 
     return app

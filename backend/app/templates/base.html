@@ -31,6 +31,8 @@
         Dashboard
       </a>
 
+      <div class="nav-divider"></div>
+
       <a href="/estoque" class="nav-item {% if active_page == 'estoque' %}active{% endif %}">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
         Estoque
@@ -41,10 +43,31 @@
         Parceiros
       </a>
 
+      <div class="nav-divider"></div>
+
       <a href="/financeiro" class="nav-item {% if active_page == 'financeiro' %}active{% endif %}">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
         Financeiro
       </a>
+
+      <a href="/despesas" class="nav-item {% if active_page == 'despesas' %}active{% endif %}">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Despesas
+      </a>
+
+      <div class="nav-divider"></div>
+
+      <a href="/vendas/nova" class="nav-item {% if active_page == 'nova_venda' %}active{% endif %}" style="background:rgba(56,163,165,.12)">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Nova Venda
+      </a>
+
+      <a href="/caixa" class="nav-item {% if active_page == 'caixa' %}active{% endif %}">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/><path d="M6 15h.01M10 15h4"/></svg>
+        Histórico de Vendas
+      </a>
+
+      <div class="nav-divider"></div>
 
       <a href="/configuracoes" class="nav-item {% if active_page == 'config' %}active{% endif %}">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
@@ -58,12 +81,6 @@
 
       {% endif %}
 
-      {# ── Caixa: visível para todos ── #}
-      <a href="/caixa" class="nav-item {% if active_page == 'caixa' %}active{% endif %}">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/><path d="M6 15h.01M10 15h4"/></svg>
-        Caixa
-      </a>
-
       {# ── Itens visíveis apenas para Parceiros ── #}
       {% if usuario_atual and not usuario_atual.is_admin %}
 
@@ -72,15 +89,31 @@
         Dashboard
       </a>
 
+      <div class="nav-divider"></div>
+
+      <a href="/meu-catalogo" class="nav-item {% if active_page == 'meu_catalogo' %}active{% endif %}">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        Meu estoque
+      </a>
+
       <a href="/financeiro" class="nav-item {% if active_page == 'financeiro' %}active{% endif %}">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
         Meu financeiro
       </a>
 
-      <a href="/meu-catalogo" class="nav-item {% if active_page == 'meu_catalogo' %}active{% endif %}">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h3v3H7zM14 7h3v3h-3zM7 14h3v3H7z"/></svg>
-        Meu catálogo
+      <div class="nav-divider"></div>
+
+      <a href="/vendas/nova" class="nav-item {% if active_page == 'nova_venda' %}active{% endif %}" style="background:rgba(56,163,165,.12)">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Nova Venda
       </a>
+
+      <a href="/caixa" class="nav-item {% if active_page == 'caixa' %}active{% endif %}">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/><path d="M6 15h.01M10 15h4"/></svg>
+        Histórico de Vendas
+      </a>
+
+      <div class="nav-divider"></div>
 
       <a href="/minhas-configuracoes" class="nav-item {% if active_page == 'minhas_config' %}active{% endif %}">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
@@ -114,17 +147,36 @@
   </aside>
 
   <div class="main-wrapper">
-    <header class="topbar">
+    <header class="topbar" style="position:relative">
       {% block topbar_left %}
       <div class="topbar-left">
         <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
         <span class="page-subtitle">{% block page_subtitle %}{% endblock %}</span>
       </div>
       {% endblock %}
+      <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none">
+        <div id="clock-date" style="font-size:var(--text-sm);font-weight:600;color:var(--c-text-1);white-space:nowrap"></div>
+        <div id="clock-time" style="font-size:var(--text-xs);color:var(--c-text-3);margin-top:1px"></div>
+      </div>
       <div class="topbar-right">
         {% block topbar_actions %}{% endblock %}
       </div>
     </header>
+    <script>
+    (function(){
+      var months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      var days=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+      function tick(){
+        var d=new Date();
+        var el=document.getElementById('clock-date');
+        var et=document.getElementById('clock-time');
+        if(!el||!et)return;
+        el.textContent=days[d.getDay()]+', '+d.getDate()+' de '+months[d.getMonth()]+' de '+d.getFullYear();
+        et.textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+      }
+      tick();setInterval(tick,1000);
+    })();
+    </script>
 
     <main class="page-content">
       {% with messages = get_flashed_messages(with_categories=true) %}

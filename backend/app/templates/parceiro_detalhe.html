@@ -42,22 +42,24 @@
     <div class="kpi-footer">unidades enviadas ao parceiro</div>
   </div>
 
-  <div class="kpi-card" style="--kpi-accent:var(--c-navy);--kpi-icon-bg:#eef2f7;--kpi-icon-color:var(--c-navy)">
+  <div class="kpi-card" onclick="abrirModal('modal-em-maos')"
+       style="--kpi-accent:var(--c-navy);--kpi-icon-bg:#eef2f7;--kpi-icon-color:var(--c-navy);cursor:pointer">
     <div class="kpi-header">
       <span class="kpi-label">Em mãos</span>
       <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8"/></svg></div>
     </div>
     <div class="kpi-value">{{ saldo.em_maos }} un.</div>
-    <div class="kpi-footer">{{ saldo.valor_em_maos | brl }} em mercadoria</div>
+    <div class="kpi-footer">{{ saldo.valor_em_maos | brl }} em mercadoria · <span style="color:var(--c-teal)">ver por produto</span></div>
   </div>
 
-  <div class="kpi-card" style="--kpi-accent:var(--c-green);--kpi-icon-bg:#f0faf5;--kpi-icon-color:#059669">
+  <div class="kpi-card" onclick="abrirModal('modal-receita')"
+       style="--kpi-accent:var(--c-green);--kpi-icon-bg:#f0faf5;--kpi-icon-color:#059669;cursor:pointer">
     <div class="kpi-header">
       <span class="kpi-label">Receita gerada</span>
       <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
     </div>
     <div class="kpi-value">{{ saldo.receita_total | brl }}</div>
-    <div class="kpi-footer">{{ saldo.total_vendas_caixa }} venda(s) · {{ saldo.desconto_total | brl }} em descontos</div>
+    <div class="kpi-footer">{{ saldo.total_vendas_caixa }} venda(s) · {{ saldo.desconto_total | brl }} em descontos · <span style="color:var(--c-teal)">ver por mês</span></div>
   </div>
 
   <div class="kpi-card" style="--kpi-accent:var(--c-warning);--kpi-icon-bg:var(--c-warning-bg);--kpi-icon-color:var(--c-warning)">
@@ -240,6 +242,105 @@
   </div>
 </div>
 
+{# ── Modal: Em mãos por produto ── #}
+<div id="modal-em-maos" onclick="if(event.target===this)fecharModal('modal-em-maos')"
+     style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:900;align-items:center;justify-content:center;padding:var(--sp-4)">
+  <div style="background:#fff;border-radius:var(--r-lg);width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-5) var(--sp-6);border-bottom:1px solid var(--border-color)">
+      <div>
+        <h3 style="font-size:var(--text-base);font-weight:700;margin-bottom:2px">Em mãos — por produto</h3>
+        <p style="font-size:var(--text-xs);color:var(--c-text-3)">Unidades que o parceiro ainda possui em consignação</p>
+      </div>
+      <button onclick="fecharModal('modal-em-maos')"
+              style="background:none;border:none;cursor:pointer;color:var(--c-text-3);font-size:22px;line-height:1;padding:4px">&times;</button>
+    </div>
+    <div style="overflow-y:auto;flex:1;padding:var(--sp-4) var(--sp-6)">
+      {% if saldo.em_maos_por_produto %}
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="font-size:var(--text-xs);color:var(--c-text-3)">
+            <th style="padding:var(--sp-2) var(--sp-2) var(--sp-2) 0;text-align:left;border-bottom:1px solid var(--border-color)">Produto</th>
+            <th style="padding:var(--sp-2);text-align:right;border-bottom:1px solid var(--border-color)">Em mãos</th>
+            <th style="padding:var(--sp-2) 0 var(--sp-2) var(--sp-2);text-align:right;border-bottom:1px solid var(--border-color)">Valor est.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in saldo.em_maos_por_produto %}
+          <tr style="border-bottom:1px solid var(--bg-subtle)">
+            <td style="padding:var(--sp-3) var(--sp-2) var(--sp-3) 0;font-size:var(--text-sm)">{{ item.nome }}</td>
+            <td style="padding:var(--sp-3) var(--sp-2);font-size:var(--text-sm);font-weight:700;text-align:right">{{ item.em_maos }} un.</td>
+            <td style="padding:var(--sp-3) 0 var(--sp-3) var(--sp-2);font-size:var(--text-sm);text-align:right;color:#059669">{{ item.valor | brl }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="text-align:center;padding:var(--sp-10);color:var(--c-text-3)">
+        <p style="font-size:var(--text-sm)">Nenhum produto em mãos no momento.</p>
+      </div>
+      {% endif %}
+    </div>
+    <div style="padding:var(--sp-4) var(--sp-6);border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:var(--text-xs);color:var(--c-text-3)">Total em mãos</span>
+      <span style="font-weight:700;font-size:var(--text-sm)">{{ saldo.em_maos }} un. · {{ saldo.valor_em_maos | brl }}</span>
+    </div>
+  </div>
+</div>
+
+{# ── Modal: Receita por mês ── #}
+<div id="modal-receita" onclick="if(event.target===this)fecharModal('modal-receita')"
+     style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:900;align-items:center;justify-content:center;padding:var(--sp-4)">
+  <div style="background:#fff;border-radius:var(--r-lg);width:100%;max-width:520px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-5) var(--sp-6);border-bottom:1px solid var(--border-color)">
+      <div>
+        <h3 style="font-size:var(--text-base);font-weight:700;margin-bottom:2px">Receita gerada — mês a mês</h3>
+        <p style="font-size:var(--text-xs);color:var(--c-text-3)">Total acumulado de vendas finalizadas no caixa</p>
+      </div>
+      <button onclick="fecharModal('modal-receita')"
+              style="background:none;border:none;cursor:pointer;color:var(--c-text-3);font-size:22px;line-height:1;padding:4px">&times;</button>
+    </div>
+    <div style="overflow-y:auto;flex:1;padding:var(--sp-4) var(--sp-6)">
+      {% if saldo.receita_por_mes %}
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="font-size:var(--text-xs);color:var(--c-text-3)">
+            <th style="padding:var(--sp-2) var(--sp-2) var(--sp-2) 0;text-align:left;border-bottom:1px solid var(--border-color)">Mês</th>
+            <th style="padding:var(--sp-2);text-align:right;border-bottom:1px solid var(--border-color)">Vendas</th>
+            <th style="padding:var(--sp-2);text-align:right;border-bottom:1px solid var(--border-color)">Receita líquida</th>
+            <th style="padding:var(--sp-2) 0 var(--sp-2) var(--sp-2);text-align:right;border-bottom:1px solid var(--border-color)">Descontos</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in saldo.receita_por_mes %}
+          <tr style="border-bottom:1px solid var(--bg-subtle)">
+            <td style="padding:var(--sp-3) var(--sp-2) var(--sp-3) 0;font-size:var(--text-sm);font-weight:600">{{ row.mes }}</td>
+            <td style="padding:var(--sp-3) var(--sp-2);font-size:var(--text-sm);text-align:right;color:var(--c-text-3)">{{ row.n_vendas }}</td>
+            <td style="padding:var(--sp-3) var(--sp-2);font-size:var(--text-sm);text-align:right;font-weight:700;color:#059669">{{ row.receita | brl }}</td>
+            <td style="padding:var(--sp-3) 0 var(--sp-3) var(--sp-2);font-size:var(--text-sm);text-align:right;color:{% if row.desconto > 0 %}var(--c-danger){% else %}var(--c-text-3){% endif %}">
+              {% if row.desconto > 0 %}-{{ row.desconto | brl }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="text-align:center;padding:var(--sp-10);color:var(--c-text-3)">
+        <p style="font-size:var(--text-sm)">Nenhuma venda registrada ainda.</p>
+      </div>
+      {% endif %}
+    </div>
+    <div style="padding:var(--sp-4) var(--sp-6);border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--sp-3)">
+      <span style="font-size:var(--text-xs);color:var(--c-text-3)">Total acumulado</span>
+      <div style="display:flex;gap:var(--sp-5)">
+        <span style="font-size:var(--text-xs)">Receita: <strong style="color:#059669">{{ saldo.receita_total | brl }}</strong></span>
+        {% if saldo.desconto_total > 0 %}
+        <span style="font-size:var(--text-xs)">Descontos: <strong style="color:var(--c-danger)">-{{ saldo.desconto_total | brl }}</strong></span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 let linhaCount = 0;
 
@@ -309,5 +410,23 @@ function calcularSubtotal(idx) {
 
 // Inicia com uma linha
 adicionarLinha();
+
+function abrirModal(id) {
+  const el = document.getElementById(id);
+  el.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function fecharModal(id) {
+  document.getElementById(id).style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    ['modal-em-maos','modal-receita'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.style.display === 'flex') fecharModal(id);
+    });
+  }
+});
 </script>
 {% endblock %}

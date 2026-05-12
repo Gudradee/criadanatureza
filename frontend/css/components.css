@@ -73,11 +73,14 @@
 }
 
 .kpi-value {
-  font-size: var(--text-2xl);
+  font-size: clamp(16px, 2vw, var(--text-xl));
   font-weight: 700;
   color: var(--c-text-1);
   letter-spacing: -0.5px;
-  line-height: 1;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kpi-footer {

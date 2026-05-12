@@ -6,30 +6,112 @@
 {% block content %}
 <div style="max-width:720px;margin:0 auto">
 
-  <!-- ── QR Code do catálogo público ──────────────────────────── -->
+  <!-- ── Métodos de recebimento ──────────────────────────────── -->
   <section class="page-section">
     <div class="card card-padded">
-      <h2 class="section-title" style="margin-bottom:var(--sp-2)">QR Code do catálogo</h2>
+      <h2 class="section-title" style="margin-bottom:var(--sp-2)">Métodos de recebimento</h2>
       <p style="font-size:var(--text-sm);color:var(--c-text-3);margin-bottom:var(--sp-5)">
-        Compartilhe com clientes. Ao escanear, acessam a loja e montam o carrinho.
+        Formas de pagamento disponíveis para selecionar ao registrar uma venda.
       </p>
-      <div style="display:flex;align-items:center;gap:var(--sp-6);flex-wrap:wrap">
-        <div style="background:#fff;border:1px solid var(--c-border);border-radius:var(--r-lg);padding:var(--sp-4);display:inline-block;flex-shrink:0">
-          <img src="/configuracoes/qr-catalogo.png" alt="QR Code" style="width:140px;height:140px;display:block">
+
+      <form method="POST" action="/configuracoes/metodos/novo"
+            style="display:grid;grid-template-columns:2fr 1fr auto;gap:var(--sp-3);margin-bottom:var(--sp-5);align-items:flex-end">
+        <div class="form-group" style="margin:0">
+          <label class="form-label required">Nome</label>
+          <input class="form-input" name="nome" placeholder="Ex: PIX, Dinheiro, Cartão crédito..." required />
         </div>
-        <div style="flex:1;min-width:200px">
-          <ol style="font-size:var(--text-sm);color:var(--c-text-3);padding-left:var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-2)">
-            <li>Imprima ou exiba no ponto de venda</li>
-            <li>Cliente escaneia e escolhe os produtos</li>
-            <li>Um QR Code é gerado na tela do cliente</li>
-            <li>Caixa escaneia e confirma a venda</li>
-          </ol>
-          <div style="margin-top:var(--sp-4);display:flex;gap:var(--sp-3)">
-            <a href="/loja" target="_blank" class="btn btn-secondary btn-sm">Abrir loja →</a>
-            <a href="/configuracoes/qr-catalogo.png" download="qrcode-catalogo.png" class="btn btn-primary btn-sm">Baixar QR</a>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Taxa (%)</label>
+          <input class="form-input" name="taxa_percentual" type="number" min="0" step="0.01" placeholder="0,00" />
+        </div>
+        <button type="submit" class="btn btn-primary">Adicionar</button>
+      </form>
+
+      {% if metodos %}
+        {% for m in metodos %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+          <div>
+            <span style="font-weight:500;font-size:var(--text-sm)">{{ m.nome }}</span>
+            {% if m.taxa_percentual > 0 %}
+            <span class="badge" style="margin-left:var(--sp-2);background:var(--bg-subtle)">
+              {{ "%.2f"|format(m.taxa_percentual * 100) }}% de taxa
+            </span>
+            {% endif %}
+            {% if not m.ativo %}
+            <span class="badge badge-warning" style="margin-left:var(--sp-2)">Inativo</span>
+            {% endif %}
           </div>
+          {% if m.ativo %}
+          <form method="POST" action="/configuracoes/metodos/{{ m.id }}/deletar"
+                onsubmit="return confirm('Desativar método {{ m.nome }}?')" style="display:inline">
+            <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)" title="Desativar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            </button>
+          </form>
+          {% endif %}
         </div>
-      </div>
+        {% endfor %}
+      {% else %}
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);text-align:center;padding:var(--sp-5)">Nenhum método cadastrado.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- ── Pontos de venda ───────────────────────────────────────── -->
+  <section class="page-section">
+    <div class="card card-padded">
+      <h2 class="section-title" style="margin-bottom:var(--sp-2)">Pontos de venda</h2>
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);margin-bottom:var(--sp-5)">
+        Locais ou canais onde as vendas acontecem.
+      </p>
+
+      <form method="POST" action="/configuracoes/pontos/novo"
+            style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:var(--sp-3);margin-bottom:var(--sp-5);align-items:flex-end">
+        <div class="form-group" style="margin:0">
+          <label class="form-label required">Nome</label>
+          <input class="form-input" name="nome" placeholder="Ex: Loja central, Feira de sábado..." required />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Localização</label>
+          <input class="form-input" name="localizacao" placeholder="Opcional..." />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Tipo</label>
+          <select class="form-select" name="tipo">
+            <option value="presencial">Presencial</option>
+            <option value="online">Online</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Adicionar</button>
+      </form>
+
+      {% if pontos %}
+        {% for p in pontos %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+          <div>
+            <span style="font-weight:500;font-size:var(--text-sm)">{{ p.nome }}</span>
+            <span class="badge" style="margin-left:var(--sp-2);background:var(--bg-subtle);text-transform:capitalize">{{ p.tipo }}</span>
+            {% if p.localizacao %}
+            <span style="font-size:var(--text-xs);color:var(--c-text-3);margin-left:var(--sp-2)">📍 {{ p.localizacao }}</span>
+            {% endif %}
+            {% if not p.ativo %}
+            <span class="badge badge-warning" style="margin-left:var(--sp-2)">Inativo</span>
+            {% endif %}
+          </div>
+          {% if p.ativo %}
+          <form method="POST" action="/configuracoes/pontos/{{ p.id }}/deletar"
+                onsubmit="return confirm('Desativar ponto {{ p.nome }}?')" style="display:inline">
+            <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)" title="Desativar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);text-align:center;padding:var(--sp-5)">Nenhum ponto de venda cadastrado.</p>
+      {% endif %}
     </div>
   </section>
 

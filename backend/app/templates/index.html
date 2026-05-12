@@ -15,7 +15,7 @@
 {% block content %}
 <!-- KPIs -->
 <section class="page-section">
-  <div class="grid-4">
+  <div class="grid-3">
     <div class="kpi-card" style="--kpi-accent:var(--c-green);--kpi-icon-bg:#f0faf5;--kpi-icon-color:#059669">
       <div class="kpi-header">
         <span class="kpi-label">Faturamento do mês</span>
@@ -27,15 +27,11 @@
 
     <div class="kpi-card" style="--kpi-accent:var(--c-danger);--kpi-icon-bg:#fef2f2;--kpi-icon-color:#dc2626">
       <div class="kpi-header">
-        <span class="kpi-label">Custo de produção</span>
+        <span class="kpi-label">Despesa</span>
         <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div>
       </div>
-      <div class="kpi-value">{{ financeiro.custo_prod_mes | brl }}</div>
-      <div class="kpi-footer">
-        {% if financeiro.outras_saidas_mes > 0 %}
-        + {{ financeiro.outras_saidas_mes | brl }} outras despesas
-        {% else %}Fabricação + insumos{% endif %}
-      </div>
+      <div class="kpi-value">{{ financeiro.total_despesas | brl }}</div>
+      <div class="kpi-footer">Produção + fixas + variáveis</div>
     </div>
 
     <div class="kpi-card" style="--kpi-accent:var(--c-teal);--kpi-icon-bg:var(--c-teal-light);--kpi-icon-color:var(--c-teal)">
@@ -48,53 +44,89 @@
       </div>
       <div class="kpi-footer">Faturamento − todas as despesas</div>
     </div>
-
-    <div class="kpi-card" style="--kpi-accent:var(--c-navy);--kpi-icon-bg:#eef2f7;--kpi-icon-color:var(--c-navy)">
-      <div class="kpi-header">
-        <span class="kpi-label">Itens em estoque</span>
-        <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
-      </div>
-      <div class="kpi-value">{{ estoque.total_itens }}</div>
-      <div class="kpi-footer">{{ estoque.total_produtos }} produtos cadastrados</div>
-    </div>
   </div>
 </section>
 
 <!-- Alertas + Fluxo mensal -->
 <div style="display:grid;grid-template-columns:1fr 340px;gap:var(--sp-5);margin-bottom:var(--sp-8)">
 
-  <!-- Fluxo mensal -->
+  <!-- Gráfico progressivo do mês -->
   <div class="card card-padded">
-    <div class="section-header" style="margin-bottom:var(--sp-5)">
-      <h2 class="section-title">Fluxo de caixa</h2>
-      <span class="badge badge-teal">Últimos 6 meses</span>
+
+    {# Cabeçalho com legenda e totais #}
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--sp-4)">
+      <div>
+        <h2 class="section-title" style="margin-bottom:2px">Caixa do mês</h2>
+        <p style="font-size:var(--text-xs);color:var(--c-text-3)">{{ grafico_mes.mes_label }} — acumulado dia a dia</p>
+      </div>
+      <div style="display:flex;gap:var(--sp-5);align-items:center">
+        <div style="text-align:right">
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:2px">Faturamento</p>
+          <p style="font-size:var(--text-sm);font-weight:700;color:#059669">{{ grafico_mes.fat_total | brl }}</p>
+        </div>
+        <div style="text-align:right">
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:2px">Despesas</p>
+          <p style="font-size:var(--text-sm);font-weight:700;color:#dc2626">{{ grafico_mes.desp_total | brl }}</p>
+        </div>
+        <div style="text-align:right;padding-left:var(--sp-4);border-left:1px solid var(--border-color)">
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:2px">Saldo</p>
+          <p style="font-size:var(--text-base);font-weight:700;color:{% if grafico_mes.positivo %}var(--c-teal){% else %}#dc2626{% endif %}">
+            {{ grafico_mes.saldo_final | brl }}
+          </p>
+        </div>
+      </div>
     </div>
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>Mês</th>
-            <th style="text-align:right">Faturamento</th>
-            <th style="text-align:right">Custo prod.</th>
-            <th style="text-align:right">Outras desp.</th>
-            <th style="text-align:right;font-weight:600">Lucro real</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for m in fluxo_mensal %}
-          <tr>
-            <td>{{ m.mes }}</td>
-            <td style="text-align:right;color:#059669">{{ m.entradas | brl }}</td>
-            <td style="text-align:right;color:#dc2626">{{ m.custo_prod | brl }}</td>
-            <td style="text-align:right;color:#d97706">{{ m.outras | brl }}</td>
-            <td style="text-align:right;font-weight:700;color:{% if m.lucro >= 0 %}var(--c-teal){% else %}var(--c-danger){% endif %}">{{ m.lucro | brl }}</td>
-          </tr>
-          {% else %}
-          <tr><td colspan="4" style="text-align:center;color:var(--c-text-3)">Sem movimentações</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+
+    {# SVG — linha única do saldo do caixa #}
+    {% if grafico_mes.vazio %}
+    <div style="text-align:center;padding:var(--sp-10);color:var(--c-text-3);font-size:var(--text-sm)">
+      Nenhuma movimentação registrada este mês.
     </div>
+    {% else %}
+    <svg viewBox="0 0 {{ grafico_mes.w }} {{ grafico_mes.h }}"
+         style="width:100%;display:block;overflow:visible">
+
+      {# Grid Y + labels #}
+      {% for t in grafico_mes.ticks %}
+      <line x1="{{ grafico_mes.pl }}" y1="{{ t.y }}"
+            x2="{{ grafico_mes.w - grafico_mes.pr }}" y2="{{ t.y }}"
+            stroke="var(--border-color)" stroke-width="1"/>
+      <text x="{{ grafico_mes.pl - 5 }}" y="{{ t.y + 4 }}"
+            text-anchor="end" font-size="10" fill="var(--c-text-3)">{{ t.label }}</text>
+      {% endfor %}
+
+      {# Linha do zero #}
+      <line x1="{{ grafico_mes.pl }}" y1="{{ grafico_mes.y0 }}"
+            x2="{{ grafico_mes.w - grafico_mes.pr }}" y2="{{ grafico_mes.y0 }}"
+            stroke="var(--c-text-3)" stroke-width="1" stroke-dasharray="3,3" opacity="0.35"/>
+
+      {# Área sob a linha do caixa #}
+      <polygon points="{{ grafico_mes.fill }}" fill="{{ grafico_mes.fill_cor }}"/>
+
+      {# Linha do caixa #}
+      <polyline points="{{ grafico_mes.poly }}"
+                fill="none" stroke="{{ grafico_mes.cor }}" stroke-width="2.5"
+                stroke-linejoin="round" stroke-linecap="round"/>
+
+      {# Ponto no dia atual #}
+      {% if grafico_mes.pts %}
+      {% set ultimo = grafico_mes.pts[-1] %}
+      <circle cx="{{ ultimo.x }}" cy="{{ ultimo.y }}" r="5"
+              fill="{{ grafico_mes.cor }}" stroke="white" stroke-width="2"/>
+      {% endif %}
+
+      {# Eixo X (dias) #}
+      <line x1="{{ grafico_mes.pl }}" y1="{{ grafico_mes.pb }}"
+            x2="{{ grafico_mes.w - grafico_mes.pr }}" y2="{{ grafico_mes.pb }}"
+            stroke="var(--border-color)" stroke-width="1"/>
+      {% for lbl in grafico_mes.labels %}
+      <text x="{{ lbl.x }}" y="{{ grafico_mes.ay }}"
+            text-anchor="middle" font-size="10" fill="var(--c-text-3)">{{ lbl.label }}</text>
+      {% endfor %}
+
+    </svg>
+    {% endif %}
+
   </div>
 
   <!-- Alertas de estoque -->

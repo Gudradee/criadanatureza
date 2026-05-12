@@ -26,6 +26,10 @@ def _calcular_saldo(parceiro, db):
     for venda in parceiro.vendas:
         for item in venda.itens:
             vendido_map[item.produto_id] += item.quantidade
+    # Vendas via VendaFinal (manual via parceiro_id OU QR via pre_venda)
+    for vf in parceiro.vendas_finais:
+        for item in vf.itens:
+            vendido_map[item.produto_id] += item.quantidade
     for dev in parceiro.devolucoes:
         for item in dev.itens:
             devolvido_map[item.produto_id] += item.quantidade
@@ -45,26 +49,55 @@ def _calcular_saldo(parceiro, db):
         preco = produtos[pid].preco_venda if pid in produtos else 0.0
         valor_em_maos += em_maos * preco
 
-    # Receita total de vendas via caixa (VendaFinal) — inclui desconto aplicado pelo operador
-    vendas_finais = (
-        db.query(models.VendaFinal)
-        .join(models.PreVenda, models.VendaFinal.pre_venda_id == models.PreVenda.id)
-        .filter(models.PreVenda.parceiro_id == parceiro.id)
-        .all()
-    )
+    # Per-product em_maos breakdown
+    em_maos_por_produto = []
+    for pid, env_qty in enviado_map.items():
+        em_qty = max(env_qty - vendido_map[pid] - devolvido_map[pid], 0)
+        if em_qty > 0:
+            prod = produtos.get(pid)
+            em_maos_por_produto.append({
+                "nome":    prod.nome if prod else f"Produto #{pid}",
+                "em_maos": em_qty,
+                "valor":   round(em_qty * (prod.preco_venda if prod else 0.0), 2),
+            })
+    em_maos_por_produto.sort(key=lambda x: x["em_maos"], reverse=True)
+
+    # Receita total: todas as VendaFinal do parceiro (manual via parceiro_id OU QR via pre_venda)
+    vendas_finais = list(parceiro.vendas_finais)
     receita_total   = sum(v.valor_total_liquido for v in vendas_finais)
     desconto_total  = sum(v.valor_total_desconto for v in vendas_finais)
     total_vendas_caixa = len(vendas_finais)
 
+    # Receita por mês (para modal de detalhes)
+    _mes_map: dict = defaultdict(lambda: {"receita": 0.0, "desconto": 0.0, "n_vendas": 0})
+    for v in vendas_finais:
+        if v.data_venda:
+            key = (v.data_venda.year, v.data_venda.month)
+            _mes_map[key]["receita"]  += v.valor_total_liquido
+            _mes_map[key]["desconto"] += v.valor_total_desconto
+            _mes_map[key]["n_vendas"] += 1
+    _MESES_PT = ["","Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]
+    receita_por_mes = [
+        {
+            "mes":      f"{_MESES_PT[m]}/{y}",
+            "receita":  round(d["receita"], 2),
+            "desconto": round(d["desconto"], 2),
+            "n_vendas": d["n_vendas"],
+        }
+        for (y, m), d in sorted(_mes_map.items(), reverse=True)
+    ]
+
     return {
-        "total_enviado":     total_enviado,
-        "total_vendido":     total_vendido,
-        "total_devolvido":   total_devolvido,
-        "em_maos":           em_maos_total,
-        "valor_em_maos":     round(valor_em_maos, 2),
-        "receita_total":     round(receita_total, 2),
-        "desconto_total":    round(desconto_total, 2),
-        "total_vendas_caixa": total_vendas_caixa,
+        "total_enviado":        total_enviado,
+        "total_vendido":        total_vendido,
+        "total_devolvido":      total_devolvido,
+        "em_maos":              em_maos_total,
+        "valor_em_maos":        round(valor_em_maos, 2),
+        "em_maos_por_produto":  em_maos_por_produto,
+        "receita_total":        round(receita_total, 2),
+        "desconto_total":       round(desconto_total, 2),
+        "total_vendas_caixa":   total_vendas_caixa,
+        "receita_por_mes":      receita_por_mes,
     }
 
 
@@ -230,6 +263,7 @@ def detalhe(parceiro_id):
             joinedload(models.Parceiro.envios).joinedload(models.Envio.itens).joinedload(models.ItemEnvio.produto),
             joinedload(models.Parceiro.vendas).joinedload(models.Venda.itens),
             joinedload(models.Parceiro.devolucoes).joinedload(models.Devolucao.itens),
+            joinedload(models.Parceiro.vendas_finais).joinedload(models.VendaFinal.itens),
         )
         .filter(models.Parceiro.id == parceiro_id).first()
     )

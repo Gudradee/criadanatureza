@@ -1,6 +1,4 @@
-import io
-
-from flask import Blueprint, render_template, request, redirect, flash, send_file
+from flask import Blueprint, render_template, request, redirect, flash
 from werkzeug.security import generate_password_hash
 
 from ..database import get_db
@@ -17,11 +15,15 @@ def listar():
     categorias = db.query(models.Categoria).order_by(models.Categoria.nome).all()
     parceiros  = db.query(models.Parceiro).order_by(models.Parceiro.nome).all()
     usuarios   = db.query(models.Usuario).order_by(models.Usuario.nome).all()
+    metodos    = db.query(models.MetodoRecebimento).order_by(models.MetodoRecebimento.nome).all()
+    pontos     = db.query(models.PontoVenda).order_by(models.PontoVenda.nome).all()
     return render_template("configuracoes.html",
         active_page = "config",
         categorias  = categorias,
         parceiros   = parceiros,
         usuarios    = usuarios,
+        metodos     = metodos,
+        pontos      = pontos,
     )
 
 
@@ -52,44 +54,6 @@ def deletar_categoria(categoria_id):
         db.commit()
         flash(f"Categoria '{nome}' excluída.", "success")
     return redirect("/configuracoes")
-
-
-# ── QR Code do catálogo geral ─────────────────────────────────────────────────
-
-@bp.route("/qr-catalogo.png")
-@admin_required
-def qr_catalogo():
-    try:
-        import qrcode
-    except ImportError:
-        from flask import abort
-        abort(500, "qrcode não instalado. Execute: pip install qrcode[pil]")
-
-    url = f"{request.host_url}loja"
-    img = qrcode.make(url)
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    buf.seek(0)
-    return send_file(buf, mimetype="image/png")
-
-
-# ── QR Code do catálogo de um parceiro específico ────────────────────────────
-
-@bp.route("/qr-parceiro/<int:parceiro_id>.png")
-@admin_required
-def qr_parceiro(parceiro_id):
-    try:
-        import qrcode
-    except ImportError:
-        from flask import abort
-        abort(500, "qrcode não instalado.")
-
-    url = f"{request.host_url}loja?p={parceiro_id}"
-    img = qrcode.make(url)
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    buf.seek(0)
-    return send_file(buf, mimetype="image/png")
 
 
 # ── Gerenciamento de usuários ─────────────────────────────────────────────────
@@ -162,6 +126,77 @@ def redefinir_senha(usuario_id):
     usuario.senha_hash = generate_password_hash(nova)
     db.commit()
     flash(f"Senha de '{usuario.username}' redefinida com sucesso.", "success")
+    return redirect("/configuracoes")
+
+
+# ── Métodos de recebimento ────────────────────────────────────────────────────
+
+@bp.route("/metodos/novo", methods=["POST"])
+@admin_required
+def criar_metodo():
+    db   = get_db()
+    nome = request.form.get("nome", "").strip()
+    if not nome:
+        flash("Informe o nome do método.", "warning")
+        return redirect("/configuracoes")
+
+    taxa_str = request.form.get("taxa_percentual", "0").replace(",", ".")
+    try:
+        taxa = float(taxa_str)
+    except ValueError:
+        taxa = 0.0
+
+    if db.query(models.MetodoRecebimento).filter(models.MetodoRecebimento.nome == nome).first():
+        flash(f"Método '{nome}' já existe.", "warning")
+        return redirect("/configuracoes")
+
+    db.add(models.MetodoRecebimento(nome=nome, taxa_percentual=round(taxa, 4), ativo=True))
+    db.commit()
+    flash(f"Método '{nome}' criado.", "success")
+    return redirect("/configuracoes")
+
+
+@bp.route("/metodos/<int:metodo_id>/deletar", methods=["POST"])
+@admin_required
+def deletar_metodo(metodo_id):
+    db     = get_db()
+    metodo = db.query(models.MetodoRecebimento).get(metodo_id)
+    if metodo:
+        metodo.ativo = False
+        db.commit()
+        flash(f"Método '{metodo.nome}' desativado.", "success")
+    return redirect("/configuracoes")
+
+
+# ── Pontos de venda ───────────────────────────────────────────────────────────
+
+@bp.route("/pontos/novo", methods=["POST"])
+@admin_required
+def criar_ponto():
+    db   = get_db()
+    nome = request.form.get("nome", "").strip()
+    if not nome:
+        flash("Informe o nome do ponto de venda.", "warning")
+        return redirect("/configuracoes")
+
+    localizacao = request.form.get("localizacao", "").strip() or None
+    tipo        = request.form.get("tipo", "presencial")
+
+    db.add(models.PontoVenda(nome=nome, localizacao=localizacao, tipo=tipo, ativo=True))
+    db.commit()
+    flash(f"Ponto de venda '{nome}' criado.", "success")
+    return redirect("/configuracoes")
+
+
+@bp.route("/pontos/<int:ponto_id>/deletar", methods=["POST"])
+@admin_required
+def deletar_ponto(ponto_id):
+    db    = get_db()
+    ponto = db.query(models.PontoVenda).get(ponto_id)
+    if ponto:
+        ponto.ativo = False
+        db.commit()
+        flash(f"Ponto '{ponto.nome}' desativado.", "success")
     return redirect("/configuracoes")
 
 
