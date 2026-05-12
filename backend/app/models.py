@@ -5,8 +5,6 @@ from .database import Base
 import enum
 
 
-# ── Enums ─────────────────────────────────────────────────────────────────────
-
 class StatusParceiro(str, enum.Enum):
     ativo   = "ativo"
     inativo = "inativo"
@@ -55,21 +53,13 @@ produto_parceiro = Table(
 )
 
 
-# ── Usuários (autenticação interna) ───────────────────────────────────────────
-
 class Usuario(Base):
-    """
-    Conta de acesso ao painel administrativo.
-    - role='admin'    → acesso total (dono/gerente)
-    - role='parceiro' → acesso restrito ao próprio caixa e financeiro
-    senha_hash nunca é exposta em templates ou respostas HTTP.
-    """
     __tablename__ = "usuarios"
 
     id          = Column(Integer, primary_key=True, index=True)
     nome        = Column(String(200), nullable=False)
     username    = Column(String(100), unique=True, nullable=False, index=True)
-    senha_hash  = Column(String(256), nullable=False)          # NUNCA expor
+    senha_hash  = Column(String(256), nullable=False)
     role        = Column(String(20),  nullable=False, default="parceiro")
     parceiro_id = Column(Integer, ForeignKey("parceiros.id"), nullable=True)
     ativo       = Column(Boolean, nullable=False, default=True)
@@ -77,8 +67,6 @@ class Usuario(Base):
 
     parceiro = relationship("Parceiro", back_populates="usuario")
 
-
-# ── Catálogo ──────────────────────────────────────────────────────────────────
 
 class Categoria(Base):
     __tablename__ = "categorias"
@@ -115,8 +103,6 @@ class Produto(Base):
     parceiros_catalogo = relationship("Parceiro", secondary=produto_parceiro, back_populates="produtos_catalogo")
 
 
-# ── Estoque ───────────────────────────────────────────────────────────────────
-
 class MovimentacaoEstoque(Base):
     __tablename__ = "movimentacoes_estoque"
 
@@ -129,8 +115,6 @@ class MovimentacaoEstoque(Base):
 
     produto    = relationship("Produto", back_populates="movimentacoes")
 
-
-# ── Parceiros ─────────────────────────────────────────────────────────────────
 
 class Parceiro(Base):
     __tablename__ = "parceiros"
@@ -298,13 +282,7 @@ class MovimentacaoFinanceira(Base):
     parceiro    = relationship("Parceiro")
 
 
-# ── Fluxo de venda por QR Code ────────────────────────────────────────────────
-
 class PreVenda(Base):
-    """
-    Intenção de compra criada pelo cliente no painel público.
-    parceiro_id identifica qual parceiro gerou o QR Code do catálogo.
-    """
     __tablename__ = "pre_vendas"
 
     id            = Column(Integer, primary_key=True, index=True)
@@ -376,14 +354,12 @@ class ItemVendaFinal(Base):
     produto = relationship("Produto",    back_populates="itens_venda_final")
 
 
-# ── Solicitações de devolução (iniciadas pelo parceiro) ───────────────────────
-
 class SolicitacaoDevolucao(Base):
     __tablename__ = "solicitacoes_devolucao"
 
     id            = Column(Integer, primary_key=True, index=True)
     parceiro_id   = Column(Integer, ForeignKey("parceiros.id"), nullable=False)
-    status        = Column(String(20), default="pendente", nullable=False)  # pendente/confirmada/rejeitada
+    status        = Column(String(20), default="pendente", nullable=False)
     motivo        = Column(Text, nullable=True)
     criado_em     = Column(DateTime(timezone=True), server_default=func.now())
     confirmado_em = Column(DateTime(timezone=True), nullable=True)

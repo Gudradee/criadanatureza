@@ -3,6 +3,22 @@
    Inspirado em Apple Design Guidelines
    ============================================================ */
 
+@font-face {
+  font-family: "Asterina";
+  src: url("/static/fonts/asterina.ttf") format("truetype");
+  font-weight: normal; font-style: normal;
+}
+@font-face {
+  font-family: "Gothic";
+  src: url("/static/fonts/gothic.ttf") format("truetype");
+  font-weight: normal; font-style: normal;
+}
+@font-face {
+  font-family: "Gothic";
+  src: url("/static/fonts/gothic-bold.ttf") format("truetype");
+  font-weight: bold; font-style: normal;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -44,8 +60,7 @@
   --c-info-bg:     #f0f9fa;
 
   /* ── Tipografia ── */
-  --font:          -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
-                   "Helvetica Neue", Arial, sans-serif;
+  --font:          "Gothic", "Georgia", "Times New Roman", serif;
   --font-mono:     "SF Mono", "Fira Code", "Cascadia Code", monospace;
 
   /* ── Escala de tamanho ── */

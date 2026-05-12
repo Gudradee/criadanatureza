@@ -84,7 +84,6 @@ def _migrate_db():
             print("[CDN] Migração: comissao_percentual adicionado.")
 
         # ── vendas_finais — novas colunas pós-MVP ────────────────────────────
-        # Só aplica se a tabela já existe (criada pelo create_all numa execução anterior)
         tabelas = insp.get_table_names()
         if "vendas_finais" in tabelas:
             cols_vf = [c["name"] for c in insp.get_columns("vendas_finais")]
@@ -101,6 +100,12 @@ def _migrate_db():
                 db.commit()
                 print("[CDN] Migração: parceiro_id adicionado em vendas_finais.")
 
+        # ── movimentacoes_financeiras ─────────────────────────────────────────
+        cols_mov = [c["name"] for c in insp.get_columns("movimentacoes_financeiras")]
+        if "parceiro_id" not in cols_mov:
+            db.execute(text("ALTER TABLE movimentacoes_financeiras ADD COLUMN parceiro_id INTEGER REFERENCES parceiros(id)"))
+            db.commit()
+            print("[CDN] Migração: parceiro_id adicionado em movimentacoes_financeiras.")
     except Exception as e:
         db.rollback()
         print(f"[CDN] Erro na migração: {e}")
@@ -201,8 +206,8 @@ def create_app():
     app = Flask(
         __name__,
         template_folder="templates",
-        static_folder=os.path.join(FRONTEND_DIR, "css"),
-        static_url_path="/static/css",
+        static_folder=FRONTEND_DIR,
+        static_url_path="/static",
     )
 
     # ── Configurações de sessão ───────────────────────────────────────────────

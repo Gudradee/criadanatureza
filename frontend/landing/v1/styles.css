@@ -1,4 +1,21 @@
 /* Landing v1 — Paleta GitHub · Cria da Natureza */
+
+@font-face {
+  font-family: "Asterina";
+  src: url("/static/fonts/asterina.ttf") format("truetype");
+  font-weight: normal; font-style: normal;
+}
+@font-face {
+  font-family: "Gothic";
+  src: url("/static/fonts/gothic.ttf") format("truetype");
+  font-weight: normal; font-style: normal;
+}
+@font-face {
+  font-family: "Gothic";
+  src: url("/static/fonts/gothic-bold.ttf") format("truetype");
+  font-weight: bold; font-style: normal;
+}
+
 :root {
   --bg:          #f6fbfa;
   --bg-card:     #ffffff;
@@ -23,7 +40,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-family: "Gothic", "Georgia", "Times New Roman", serif;
   background: var(--bg);
   color: var(--text-1);
   line-height: 1.6;
@@ -48,11 +65,13 @@ body {
   display: flex;
   align-items: center;
   gap: .5rem;
+  font-family: "Asterina", "Gothic", "Georgia", serif;
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--teal-dark);
   text-decoration: none;
 }
+.nav-logo-img { height: 44px; width: auto; display: block; }
 .nav-brand .leaf { font-size: 1.35rem; }
 .nav-links {
   display: flex;
@@ -308,13 +327,33 @@ body {
   font-size: .82rem;
 }
 .footer-brand {
+  font-family: "Asterina", "Gothic", "Georgia", serif;
   color: #fff;
   font-weight: 700;
   font-size: .95rem;
 }
+.footer-logo-img { height: 36px; width: auto; display: block; }
 .footer-links { display: flex; gap: 1.25rem; }
 .footer-links a { color: rgba(255,255,255,.55); text-decoration: none; transition: color .2s; }
 .footer-links a:hover { color: var(--green-light); }
+
+/* ── PRODUCT COLOR THEMES ────────────────────────────── */
+.product-card.shampoo .product-img {
+  background: linear-gradient(140deg, #7f7b3f 0%, #6b6835 100%);
+  border-color: #6b6835; color: #fff;
+}
+.product-card.condicionador .product-img {
+  background: linear-gradient(140deg, #bd848a 0%, #a4767b 100%);
+  border-color: #a4767b; color: #fff;
+}
+.product-card.balsamo .product-img {
+  background: linear-gradient(140deg, #c5bfa2 0%, #8a4f55 100%);
+  border-color: #8a4f55; color: #fff;
+}
+.product-card.serum .product-img {
+  background: linear-gradient(140deg, #a8a58d 0%, #99967f 100%);
+  border-color: #99967f; color: #fff;
+}
 
 /* ── RESPONSIVE ──────────────────────────────────────── */
 @media (max-width: 768px) {
