@@ -82,6 +82,7 @@
     {# Formulário: novo método #}
     <form method="POST" action="/minhas-configuracoes/metodos/novo"
           style="display:flex;gap:var(--sp-3);align-items:flex-end;margin-bottom:var(--sp-5)">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="form-group" style="flex:1;margin:0">
         <label class="form-label required">Nome do método</label>
         <input class="form-input" name="nome" placeholder="Ex: PIX, Dinheiro, Cartão..." required />
@@ -97,6 +98,7 @@
         <span style="font-weight:500;font-size:var(--text-sm)">{{ m.nome }}</span>
         <form method="POST" action="/minhas-configuracoes/metodos/{{ m.id }}/deletar"
               onsubmit="return confirm('Remover o método \'{{ m.nome }}\'?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)" title="Remover">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"/>

@@ -1,6 +1,6 @@
 import os
 import secrets as _secrets
-from datetime import timedelta
+from datetime import timedelta, timezone
 from pathlib import Path
 
 from flask import Flask, g, send_from_directory
@@ -26,6 +26,22 @@ def _brl(value):
         return f"R$ {formatted}"
     except (TypeError, ValueError):
         return "R$ 0,00"
+
+
+# ── Filtro de template: converte UTC → horário de Brasília (UTC-3) ───────────
+_BRT = timezone(timedelta(hours=-3))
+
+def _localdt(value, fmt="%d/%m/%Y %H:%M"):
+    """Converte datetime UTC para horário de Brasília e formata."""
+    if value is None:
+        return "—"
+    try:
+        # Se já tem tzinfo, converte; se for naive, assume UTC
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(_BRT).strftime(fmt)
+    except Exception:
+        return str(value)
 
 
 # ── Sincronização do usuário admin com o .env ────────────────────────────────
@@ -122,7 +138,28 @@ def _backfill_financeiro():
     from sqlalchemy.orm import joinedload
     db = SessionLocal()
     try:
+        # ── 0. Remove entradas retroativas duplicadas geradas antes da mudança ──
+        # Antes os custos iam para MovimentacaoFinanceira; agora vão para Despesa.
+        # Qualquer "Custo retroativo" em MF que também existe em Despesa é excluído.
+        duplicados = db.query(models.MovimentacaoFinanceira).filter(
+            models.MovimentacaoFinanceira.categoria == "Custo de Produção",
+            models.MovimentacaoFinanceira.descricao.like("Custo retroativo:%"),
+        ).all()
+        for dup in duplicados:
+            # Extrai o nome do produto da descrição "Custo retroativo: NOME × N un."
+            nome_prod = dup.descricao.split("Custo retroativo:")[-1].split("×")[0].strip()
+            tem_despesa = db.query(models.Despesa).filter(
+                models.Despesa.categoria == "Custo de Produção",
+                models.Despesa.descricao.contains(nome_prod),
+            ).first()
+            if tem_despesa:
+                db.delete(dup)
+                print(f"[CDN] Removida MF duplicada: {dup.descricao}")
+        db.flush()
+
         # ── 1. Custo de produção por produto ───────────────────────────────────
+        # Custos registrados em MovimentacaoFinanceira (legado) ou em Despesa (novo).
+        # Somamos ambos para evitar duplicação retroativa.
         for produto in db.query(models.Produto).filter(models.Produto.preco_custo > 0).all():
             total_entrada = db.query(func.sum(models.MovimentacaoEstoque.quantidade)).filter(
                 models.MovimentacaoEstoque.produto_id == produto.id,
@@ -132,11 +169,17 @@ def _backfill_financeiro():
             if not total_entrada:
                 continue
 
-            custo_registrado = db.query(func.sum(models.MovimentacaoFinanceira.valor)).filter(
+            custo_mf = db.query(func.sum(models.MovimentacaoFinanceira.valor)).filter(
                 models.MovimentacaoFinanceira.categoria == "Custo de Produção",
                 models.MovimentacaoFinanceira.descricao.contains(produto.nome),
             ).scalar() or 0.0
 
+            custo_despesa = db.query(func.sum(models.Despesa.valor)).filter(
+                models.Despesa.categoria == "Custo de Produção",
+                models.Despesa.descricao.contains(produto.nome),
+            ).scalar() or 0.0
+
+            custo_registrado = custo_mf + custo_despesa
             esperado = round(total_entrada * produto.preco_custo, 2)
             gap = round(esperado - custo_registrado, 2)
             if gap > 0.01:
@@ -211,8 +254,20 @@ def create_app():
     )
 
     # ── Configurações de sessão ───────────────────────────────────────────────
-    app.secret_key                = os.environ.get("CDN_SECRET_KEY") or _secrets.token_hex(32)
+    _PLACEHOLDER = "troque-esta-chave-por-um-valor-gerado-aleatoriamente"
+    _raw_key = os.environ.get("CDN_SECRET_KEY", "").strip()
+    if not _raw_key or _raw_key == _PLACEHOLDER:
+        raise RuntimeError(
+            "[CDN] CDN_SECRET_KEY não está configurada. "
+            "Gere um valor seguro com: python -c \"import secrets; print(secrets.token_hex(32))\" "
+            "e defina no arquivo .env antes de iniciar."
+        )
+    app.secret_key                = _raw_key
     app.permanent_session_lifetime = timedelta(hours=12)
+
+    # ── Proteção CSRF global ──────────────────────────────────────────────────
+    from flask_wtf.csrf import CSRFProtect
+    CSRFProtect(app)
 
     # ── Inicialização do banco de dados ───────────────────────────────────────
     Base.metadata.create_all(bind=engine)   # cria tabelas que ainda não existem
@@ -221,7 +276,8 @@ def create_app():
     _backfill_financeiro()                  # preenche registros financeiros retroativos
 
     # ── Filtros e contexto global de templates ───────────────────────────────
-    app.jinja_env.filters["brl"] = _brl
+    app.jinja_env.filters["brl"]     = _brl
+    app.jinja_env.filters["localdt"] = _localdt
 
     @app.context_processor
     def _inject_usuario():
@@ -294,6 +350,7 @@ def create_app():
     from .blueprints.parceiro_area import bp as parceiro_area_bp
     from .blueprints.vendas        import bp as vendas_bp
     from .blueprints.despesas      import bp as despesas_bp
+    from .blueprints.macros        import bp as macros_bp
 
     app.register_blueprint(auth_bp)           # /login, /logout
     app.register_blueprint(dashboard_bp)      # / (admin)
@@ -305,5 +362,6 @@ def create_app():
     app.register_blueprint(parceiro_area_bp)  # /meu-painel, /meu-catalogo
     app.register_blueprint(vendas_bp)         # /vendas (venda manual)
     app.register_blueprint(despesas_bp)       # /despesas
+    app.register_blueprint(macros_bp)         # /macros
 
     return app

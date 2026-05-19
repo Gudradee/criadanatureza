@@ -22,6 +22,7 @@
     <form method="POST"
           action="{% if produto %}/estoque/{{ produto.id }}/editar{% else %}/estoque/novo{% endif %}"
           enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <!-- ── Imagem ───────────────────────────────────────────── -->
       <div class="form-group" style="margin-bottom:var(--sp-6)">

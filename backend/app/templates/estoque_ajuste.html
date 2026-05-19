@@ -23,6 +23,7 @@
       Estoque atual: <strong style="color:var(--c-text-1)">{{ produto.quantidade }} unidades</strong>
     </p>
     <form method="POST" action="/estoque/{{ produto.id }}/ajuste">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="form-group">
         <label class="form-label required">Tipo de movimentação</label>
         <select class="form-select" name="tipo" required>

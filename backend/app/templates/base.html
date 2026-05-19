@@ -67,6 +67,11 @@
         Histórico de Vendas
       </a>
 
+      <a href="/macros" class="nav-item {% if active_page == 'macros' %}active{% endif %}">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Macros
+      </a>
+
       <div class="nav-divider"></div>
 
       <a href="/configuracoes" class="nav-item {% if active_page == 'config' %}active{% endif %}">
@@ -137,6 +142,7 @@
         {% endif %}
       </div>
       <form method="POST" action="/logout">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-md);color:rgba(255,255,255,.5);font-size:var(--text-xs);padding:var(--sp-2);cursor:pointer;transition:all .15s">
           Sair da conta
         </button>

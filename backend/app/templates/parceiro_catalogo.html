@@ -80,6 +80,7 @@
 
   <div id="form-devolucao" style="display:none">
     <form method="POST" action="/meu-catalogo/solicitar-devolucao">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div id="dev-linhas" style="display:flex;flex-direction:column;gap:var(--sp-2);margin-bottom:var(--sp-4)">
         <div class="form-row">
           <select class="form-select" name="produto_id" style="flex:3">
