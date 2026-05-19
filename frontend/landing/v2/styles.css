@@ -428,6 +428,12 @@ body {
 .footer-links a { color: rgba(255,255,255,.5); text-decoration: none; transition: color .2s; }
 .footer-links a:hover { color: var(--sage-light); }
 
+/* ── IMAGENS REAIS ───────────────────────────────────── */
+.hero-img-wrap  { aspect-ratio: 4/5; width: 100%; overflow: hidden; border-radius: var(--radius-lg); }
+.about-img-wrap { aspect-ratio: 5/4; width: 100%; overflow: hidden; border-radius: var(--radius-lg); }
+.section-img    { width: 100%; height: 100%; object-fit: cover; display: block; }
+.product-img-real { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+
 /* ── PRODUCT COLOR THEMES ────────────────────────────── */
 .product-card.shampoo .product-img {
   background: linear-gradient(140deg, #7f7b3f 0%, #6b6835 100%);
