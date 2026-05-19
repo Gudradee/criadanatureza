@@ -1,6 +1,6 @@
 from calendar import monthrange
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 from sqlalchemy import func, extract
 from datetime import datetime, timedelta
 
@@ -60,6 +60,8 @@ def _build_grafico_mes(fat_cum, desp_cum, hoje):
     saldo_final = saldo[-1] if saldo else 0
     positivo    = saldo_final >= 0
 
+    _MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                 'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
     return {
         "pts": pts, "poly": poly, "fill": fill,
         "ticks": ticks, "labels": labels,
@@ -71,7 +73,7 @@ def _build_grafico_mes(fat_cum, desp_cum, hoje):
         "positivo":    positivo,
         "cor":         "#059669" if positivo else "#dc2626",
         "fill_cor":    "rgba(5,150,105,0.12)" if positivo else "rgba(220,38,38,0.10)",
-        "mes_label":   hoje.strftime("%B de %Y"),
+        "mes_label":   f"{_MESES_PT[hoje.month - 1]} de {hoje.year}",
         "vazio":       (not saldo or max(abs(v) for v in saldo) == 0),
     }
 
@@ -81,92 +83,93 @@ bp = Blueprint("dashboard", __name__)
 @bp.route("/")
 @admin_required
 def index():
-    db = get_db()
+    db   = get_db()
     hoje = datetime.now()
-    inicio_mes = hoje.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-    # ── KPIs financeiros do mês atual ─────────────────────────────────────────
-    def _soma(tipo, desde=None, categoria=None):
-        q = db.query(func.sum(models.MovimentacaoFinanceira.valor)).filter(
-            models.MovimentacaoFinanceira.tipo == tipo
-        )
-        if desde:
-            q = q.filter(models.MovimentacaoFinanceira.data >= desde)
-        if categoria:
-            q = q.filter(models.MovimentacaoFinanceira.categoria == categoria)
-        return q.scalar() or 0.0
+    # ── Filtro de mês/ano ─────────────────────────────────────────────────────
+    mes_num = request.args.get("mes_num", type=int) or hoje.month
+    mes_ano = request.args.get("mes_ano", type=int) or hoje.year
+    if not (1 <= mes_num <= 12):
+        mes_num = hoje.month
 
-    entradas_mes   = _soma("entrada", inicio_mes)
-    saidas_mes     = _soma("saida",   inicio_mes)
+    is_mes_atual  = (mes_ano == hoje.year and mes_num == hoje.month)
+    _, dias_mes   = monthrange(mes_ano, mes_num)
+    ultimo_dia    = hoje.day if is_mes_atual else dias_mes
+    mes_ref       = datetime(mes_ano, mes_num, 1)
 
-    # Despesas manuais (fixas + variáveis) do Despesa table
+    # ── KPIs financeiros do mês selecionado ──────────────────────────────────
+    entradas_mes = db.query(func.sum(models.MovimentacaoFinanceira.valor)).filter(
+        models.MovimentacaoFinanceira.tipo == "entrada",
+        extract("year",  models.MovimentacaoFinanceira.data) == mes_ano,
+        extract("month", models.MovimentacaoFinanceira.data) == mes_num,
+    ).scalar() or 0.0
+
+    saidas_mes = db.query(func.sum(models.MovimentacaoFinanceira.valor)).filter(
+        models.MovimentacaoFinanceira.tipo == "saida",
+        extract("year",  models.MovimentacaoFinanceira.data) == mes_ano,
+        extract("month", models.MovimentacaoFinanceira.data) == mes_num,
+    ).scalar() or 0.0
+
     despesas_manuais = db.query(func.sum(models.Despesa.valor)).filter(
-        extract("year",  models.Despesa.data_competencia) == hoje.year,
-        extract("month", models.Despesa.data_competencia) == hoje.month,
+        extract("year",  models.Despesa.data_competencia) == mes_ano,
+        extract("month", models.Despesa.data_competencia) == mes_num,
     ).scalar() or 0.0
 
     total_despesas = saidas_mes + despesas_manuais
 
     # ── Resumo de estoque ─────────────────────────────────────────────────────
     total_produtos = db.query(func.count(models.Produto.id)).scalar() or 0
-
-    # Produtos abaixo do estoque mínimo (alertas)
     alertas = db.query(models.Produto).filter(
         models.Produto.quantidade <= models.Produto.estoque_minimo
     ).all()
 
-    # ── Parceiros ativos (prévia no dashboard) ────────────────────────────────
+    # ── Parceiros ativos ──────────────────────────────────────────────────────
     parceiros = db.query(models.Parceiro).filter(
         models.Parceiro.status == "ativo"
     ).order_by(models.Parceiro.nome).limit(6).all()
 
-    # ── Gráfico progressivo: caixa acumulado dia a dia no mês atual ──────────
-    today_day = hoje.day
+    # ── Gráfico progressivo: caixa acumulado dia a dia ────────────────────────
+    fat_dia  = [0.0] * ultimo_dia
+    desp_dia = [0.0] * ultimo_dia
 
-    # Faturamento por dia (VendaFinal.valor_total_liquido)
-    fat_dia = [0.0] * today_day
     for vf in db.query(models.VendaFinal).filter(
-        extract("year",  models.VendaFinal.data_venda) == hoje.year,
-        extract("month", models.VendaFinal.data_venda) == hoje.month,
+        extract("year",  models.VendaFinal.data_venda) == mes_ano,
+        extract("month", models.VendaFinal.data_venda) == mes_num,
     ).all():
         d = vf.data_venda.day if vf.data_venda else 1
-        if 1 <= d <= today_day:
+        if 1 <= d <= ultimo_dia:
             fat_dia[d - 1] += vf.valor_total_liquido
 
-    # Despesas por dia — manual (Despesa, pelo criado_em)
-    desp_dia = [0.0] * today_day
     for dep in db.query(models.Despesa).filter(
-        extract("year",  models.Despesa.criado_em) == hoje.year,
-        extract("month", models.Despesa.criado_em) == hoje.month,
+        extract("year",  models.Despesa.criado_em) == mes_ano,
+        extract("month", models.Despesa.criado_em) == mes_num,
     ).all():
         d = dep.criado_em.day if dep.criado_em else 1
-        if 1 <= d <= today_day:
+        if 1 <= d <= ultimo_dia:
             desp_dia[d - 1] += dep.valor
 
-    # Despesas por dia — automáticas (MovimentacaoFinanceira saidas: comissões etc.)
     for mf in db.query(models.MovimentacaoFinanceira).filter(
         models.MovimentacaoFinanceira.tipo == "saida",
-        extract("year",  models.MovimentacaoFinanceira.data) == hoje.year,
-        extract("month", models.MovimentacaoFinanceira.data) == hoje.month,
+        extract("year",  models.MovimentacaoFinanceira.data) == mes_ano,
+        extract("month", models.MovimentacaoFinanceira.data) == mes_num,
     ).all():
         d = mf.data.day if mf.data else 1
-        if 1 <= d <= today_day:
+        if 1 <= d <= ultimo_dia:
             desp_dia[d - 1] += mf.valor
 
-    # Cumulativos
     fat_cum, desp_cum = [], []
     rf = rd = 0.0
-    for i in range(today_day):
-        rf += fat_dia[i]
-        rd += desp_dia[i]
-        fat_cum.append(round(rf, 2))
-        desp_cum.append(round(rd, 2))
+    for i in range(ultimo_dia):
+        rf += fat_dia[i];  fat_cum.append(round(rf, 2))
+        rd += desp_dia[i]; desp_cum.append(round(rd, 2))
 
-    grafico_mes = _build_grafico_mes(fat_cum, desp_cum, hoje)
+    grafico_mes = _build_grafico_mes(fat_cum, desp_cum, mes_ref)
 
     return render_template("index.html",
-        active_page="dashboard",
-        hoje=hoje.strftime("%d de %B de %Y"),
+        active_page    = "dashboard",
+        hoje           = hoje.strftime("%d de %B de %Y"),
+        mes_num        = mes_num,
+        mes_ano        = mes_ano,
         financeiro={
             "entradas_mes":   round(entradas_mes, 2),
             "total_despesas": round(total_despesas, 2),
@@ -177,8 +180,8 @@ def index():
             "alertas": [{"id": p.id, "nome": p.nome, "quantidade": p.quantidade,
                          "estoque_minimo": p.estoque_minimo} for p in alertas],
         },
-        parceiros=parceiros,
-        grafico_mes=grafico_mes,
+        parceiros   = parceiros,
+        grafico_mes = grafico_mes,
     )
 
 

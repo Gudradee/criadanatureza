@@ -1,3 +1,4 @@
+import math
 from types import SimpleNamespace
 from datetime import datetime
 
@@ -92,6 +93,43 @@ def _svg_hbar(items):
     }
 
 
+def _svg_pie(items):
+    """Pie chart — one slice per item."""
+    if not items:
+        return None
+    total = sum(it['value'] for it in items) or 0.01
+    cx, cy, r = 165, 150, 120
+    sw, sh = 700, 300
+    _COLORS = ['#38a3a5','#059669','#6d28d9','#d97706','#dc2626','#0284c7','#7c3aed','#be185d','#0f766e','#ca8a04']
+    slices = []
+    start = -math.pi / 2
+    for i, it in enumerate(items):
+        frac  = it['value'] / total
+        angle = frac * 2 * math.pi
+        end   = start + angle
+        x1 = round(cx + r * math.cos(start), 2)
+        y1 = round(cy + r * math.sin(start), 2)
+        x2 = round(cx + r * math.cos(end), 2)
+        y2 = round(cy + r * math.sin(end), 2)
+        large = 1 if angle > math.pi else 0
+        slices.append({
+            'path':  f"M {cx} {cy} L {x1} {y1} A {r} {r} 0 {large} 1 {x2} {y2} Z",
+            'color': _COLORS[i % len(_COLORS)],
+            'label': it['label'],
+            'value': round(it['value'], 2),
+            'pct':   round(frac * 100, 1),
+        })
+        start = end
+    leg_x  = cx * 2 + 30
+    legend = [
+        {'color': s['color'], 'label': s['label'], 'value': s['value'],
+         'pct': s['pct'], 'ry': 30 + i * 38}
+        for i, s in enumerate(slices)
+    ]
+    return {'slices': slices, 'legend': legend, 'leg_x': leg_x,
+            'cx': cx, 'cy': cy, 'r': r, 'sw': sw, 'sh': sh}
+
+
 def _svg_line(series):
     all_v = [v for s in series for v in s['data']] + [0]
     lo, hi = min(all_v), max(all_v + [0.01])
@@ -132,9 +170,24 @@ def _soma_mf(db, tipo, parceiro_id=None, desde=None, categoria=None):
     return q.scalar() or 0.0
 
 
-def _soma_despesas(db, ano=None, mes=None):
-    """Soma Despesa.valor com filtro opcional de mês."""
+def _soma_despesas(db, ano=None, mes=None, excluir_categoria=None):
+    """Soma Despesa.valor com filtros opcionais."""
     q = db.query(func.sum(models.Despesa.valor))
+    if ano and mes:
+        q = q.filter(
+            extract("year",  models.Despesa.data_competencia) == ano,
+            extract("month", models.Despesa.data_competencia) == mes,
+        )
+    if excluir_categoria:
+        q = q.filter(models.Despesa.categoria != excluir_categoria)
+    return q.scalar() or 0.0
+
+
+def _soma_despesas_cat(db, categoria, ano=None, mes=None):
+    """Soma Despesa.valor por categoria."""
+    q = db.query(func.sum(models.Despesa.valor)).filter(
+        models.Despesa.categoria == categoria
+    )
     if ano and mes:
         q = q.filter(
             extract("year",  models.Despesa.data_competencia) == ano,
@@ -156,35 +209,46 @@ def _resumo(db, parceiro_id=None):
 
     te   = _soma_mf(db, "entrada", parceiro_id)
     ts   = _soma_mf(db, "saida",   parceiro_id)
-    tcp  = _soma_mf(db, "saida",   parceiro_id, categoria="Custo de Produção")
     tcom = _soma_mf(db, "saida",   parceiro_id, categoria="Comissão Parceiro")
     me   = _soma_mf(db, "entrada", parceiro_id, desde=inicio_mes)
     ms   = _soma_mf(db, "saida",   parceiro_id, desde=inicio_mes)
-    mcp  = _soma_mf(db, "saida",   parceiro_id, desde=inicio_mes, categoria="Custo de Produção")
     mcom = _soma_mf(db, "saida",   parceiro_id, desde=inicio_mes, categoria="Comissão Parceiro")
 
-    # Despesas manuais (apenas admin — parceiros não têm despesas próprias)
-    td   = _soma_despesas(db)                if not parceiro_id else 0.0
-    md   = _soma_despesas(db, ano=ano, mes=mes) if not parceiro_id else 0.0
+    # Custo de produção: legado em MovimentacaoFinanceira + novos em Despesa
+    tcp_mf  = _soma_mf(db, "saida", parceiro_id, categoria="Custo de Produção")
+    mcp_mf  = _soma_mf(db, "saida", parceiro_id, desde=inicio_mes, categoria="Custo de Produção")
+    tcp_d   = _soma_despesas_cat(db, "Custo de Produção")                if not parceiro_id else 0.0
+    mcp_d   = _soma_despesas_cat(db, "Custo de Produção", ano=ano, mes=mes) if not parceiro_id else 0.0
+    tcp     = tcp_mf + tcp_d
+    mcp     = mcp_mf + mcp_d
+
+    # Despesas manuais (exclui Custo de Produção, que já é contado separado)
+    td   = _soma_despesas(db,                    excluir_categoria="Custo de Produção") if not parceiro_id else 0.0
+    md   = _soma_despesas(db, ano=ano, mes=mes,  excluir_categoria="Custo de Produção") if not parceiro_id else 0.0
+
+    total_desp    = ts + tcp_d + td   # ts já inclui tcp_mf; tcp_d e td são de Despesa
+    mes_desp      = ms + mcp_d + md
+    lucro_total   = te - total_desp
+    lucro_mes     = me - mes_desp
 
     return {
         "total_entradas":        round(te, 2),
         "total_saidas":          round(ts, 2),
         "total_custo_prod":      round(tcp, 2),
         "total_comissoes":       round(tcom, 2),
-        "total_outras_saidas":   round(ts - tcp - tcom, 2),
+        "total_outras_saidas":   round(ts - tcp_mf - tcom, 2),
         "total_despesas_manual": round(td, 2),
-        "total_despesas":        round(ts + td, 2),
-        "lucro_estimado":        round(te - ts - td, 2),
+        "total_despesas":        round(total_desp, 2),
+        "lucro_estimado":        round(lucro_total, 2),
 
         "mes_atual_entradas":    round(me, 2),
         "mes_atual_saidas":      round(ms, 2),
         "mes_atual_custo_prod":  round(mcp, 2),
         "mes_atual_comissoes":   round(mcom, 2),
-        "mes_atual_outras":      round(ms - mcp - mcom, 2),
+        "mes_atual_outras":      round(ms - mcp_mf - mcom, 2),
         "mes_atual_despesas_manual": round(md, 2),
-        "mes_atual_despesas":    round(ms + md, 2),
-        "mes_atual_lucro":       round(me - ms - md, 2),
+        "mes_atual_despesas":    round(mes_desp, 2),
+        "mes_atual_lucro":       round(lucro_mes, 2),
     }
 
 
@@ -385,6 +449,7 @@ def listar():
     total_despesas_variavel = 0.0
     chart_svg              = None
     chart_aba              = None
+    chart_tipo_c           = 'bar'
     chart_ano_c            = None
     chart_produto_id_c     = None
     chart_totais           = None
@@ -449,8 +514,16 @@ def listar():
 
         # ── Análise anual — gráficos SVG ─────────────────────────────────────────
         chart_aba          = request.args.get("chart_aba", "faturamento")
+        if chart_aba == 'balanco':   # backward compat
+            chart_aba = 'resultado'
         chart_ano_c        = request.args.get("chart_ano", type=int) or hoje.year
         chart_produto_id_c = request.args.get("chart_produto_id", type=int)
+        _default_tipo = {'faturamento': 'bar', 'despesas': 'bar', 'resultado': 'line', 'por_local': 'pie'}
+        _valid_tipo   = {'faturamento': {'bar', 'line'}, 'despesas': {'bar', 'line'},
+                         'resultado': {'line', 'bar'}, 'por_local': {'pie'}}
+        chart_tipo_c  = request.args.get("chart_tipo", "")
+        if chart_tipo_c not in _valid_tipo.get(chart_aba, set()):
+            chart_tipo_c = _default_tipo.get(chart_aba, 'bar')
 
         c_fat  = [0.0] * 12
         c_desp = [0.0] * 12
@@ -563,17 +636,26 @@ def listar():
             c_local_items.sort(key=lambda x: x['value'], reverse=True)
 
         if chart_aba == 'faturamento':
-            chart_svg = _svg_bar(c_fat,  'rgba(56,163,165,0.72)', 'rgba(56,163,165,1)')
+            if chart_tipo_c == 'line':
+                chart_svg = _svg_line([{'data': c_fat, 'label': 'Faturamento bruto', 'color': '#38a3a5', 'fill_color': 'rgba(56,163,165,0.12)'}])
+            else:
+                chart_svg = _svg_bar(c_fat, 'rgba(56,163,165,0.72)', 'rgba(56,163,165,1)')
         elif chart_aba == 'despesas':
-            chart_svg = _svg_bar(c_desp, 'rgba(220,38,38,0.62)',  'rgba(220,38,38,1)')
+            if chart_tipo_c == 'line':
+                chart_svg = _svg_line([{'data': c_desp, 'label': 'Despesas', 'color': '#dc2626', 'fill_color': 'rgba(220,38,38,0.1)'}])
+            else:
+                chart_svg = _svg_bar(c_desp, 'rgba(220,38,38,0.62)', 'rgba(220,38,38,1)')
         elif chart_aba == 'por_local':
-            chart_svg = _svg_hbar(c_local_items)
-        else:
-            chart_svg = _svg_line([
-                {'data': c_ent,  'label': 'Entradas',  'color': '#059669', 'fill_color': None},
-                {'data': c_sai,  'label': 'Saídas',    'color': '#dc2626', 'fill_color': None},
-                {'data': c_res,  'label': 'Resultado',  'color': '#38a3a5', 'fill_color': 'rgba(56,163,165,0.12)'},
-            ])
+            chart_svg = _svg_pie(c_local_items)
+        else:  # resultado
+            if chart_tipo_c == 'bar':
+                chart_svg = _svg_bar(c_res, 'rgba(56,163,165,0.62)', 'rgba(56,163,165,1)')
+            else:
+                chart_svg = _svg_line([
+                    {'data': c_ent,  'label': 'Entradas',  'color': '#059669', 'fill_color': None},
+                    {'data': c_sai,  'label': 'Saídas',    'color': '#dc2626', 'fill_color': None},
+                    {'data': c_res,  'label': 'Resultado', 'color': '#38a3a5', 'fill_color': 'rgba(56,163,165,0.12)'},
+                ])
 
         chart_totais = {
             'fat':   round(sum(c_fat),  2),
@@ -633,6 +715,7 @@ def listar():
         total_despesas_variavel  = total_despesas_variavel,
         chart_svg                = chart_svg,
         chart_aba                = chart_aba,
+        chart_tipo               = chart_tipo_c,
         chart_ano_c              = chart_ano_c,
         chart_produto_id_c       = chart_produto_id_c,
         chart_totais             = chart_totais,

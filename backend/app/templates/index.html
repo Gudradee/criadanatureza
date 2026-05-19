@@ -6,10 +6,19 @@
 {% block page_subtitle %}{{ hoje }}{% endblock %}
 
 {% block topbar_actions %}
-<a href="/estoque/novo" class="btn btn-primary btn-sm">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-  Novo produto
-</a>
+<form method="GET" action="/" style="display:flex;gap:var(--sp-2);align-items:center">
+  <select name="mes_num" class="form-select" style="width:130px;height:36px">
+    {% for n,l in [(1,'Janeiro'),(2,'Fevereiro'),(3,'Março'),(4,'Abril'),(5,'Maio'),(6,'Junho'),(7,'Julho'),(8,'Agosto'),(9,'Setembro'),(10,'Outubro'),(11,'Novembro'),(12,'Dezembro')] %}
+    <option value="{{ n }}" {% if n == mes_num %}selected{% endif %}>{{ l }}</option>
+    {% endfor %}
+  </select>
+  <select name="mes_ano" class="form-select" style="width:85px;height:36px">
+    {% for y in range(2023, mes_ano + 2) %}
+    <option value="{{ y }}" {% if y == mes_ano %}selected{% endif %}>{{ y }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-secondary btn-sm" style="height:36px">Filtrar</button>
+</form>
 {% endblock %}
 
 {% block content %}

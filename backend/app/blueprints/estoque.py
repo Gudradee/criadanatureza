@@ -1,6 +1,7 @@
 import os
 import secrets
 from collections import defaultdict
+from datetime import datetime
 
 from flask import Blueprint, render_template, request, redirect, flash
 from sqlalchemy.orm import joinedload
@@ -113,6 +114,14 @@ def listar():
         for pe in parceiros_estoque
     )
 
+    historico = (
+        db.query(models.MovimentacaoEstoque)
+        .options(joinedload(models.MovimentacaoEstoque.produto))
+        .order_by(models.MovimentacaoEstoque.criado_em.desc())
+        .limit(60)
+        .all()
+    )
+
     return render_template("estoque.html",
         active_page="estoque",
         produtos=produtos,
@@ -123,6 +132,7 @@ def listar():
         parceiros_estoque=parceiros_estoque,
         total_itens_admin=total_itens_admin,
         total_itens_parceiros=total_itens_parceiros,
+        historico=historico,
     )
 
 
@@ -171,11 +181,13 @@ def criar():
             quantidade=produto.quantidade, motivo="Estoque inicial"
         ))
         if produto.preco_custo > 0:
-            db.add(models.MovimentacaoFinanceira(
-                tipo="saida",
-                categoria="Custo de Produção",
-                descricao=f"Produção: {produto.nome} × {produto.quantidade} un.",
-                valor=round(produto.preco_custo * produto.quantidade, 2),
+            hoje = datetime.now()
+            db.add(models.Despesa(
+                descricao        = f"Produção: {produto.nome} × {produto.quantidade} un.",
+                valor            = round(produto.preco_custo * produto.quantidade, 2),
+                tipo             = "variavel",
+                categoria        = "Custo de Produção",
+                data_competencia = datetime(hoje.year, hoje.month, 1),
             ))
         db.commit()
 
@@ -209,17 +221,40 @@ def atualizar(produto_id):
         flash("Produto não encontrado.", "warning")
         return redirect("/estoque")
 
-    produto.nome = request.form["nome"]
+    nova_qtd    = int(request.form.get("quantidade", 0))
+    qtd_anterior = produto.quantidade
+    diff         = nova_qtd - qtd_anterior
+
+    produto.nome         = request.form["nome"]
     produto.categoria_id = int(request.form["categoria_id"]) if request.form.get("categoria_id") else None
-    produto.descricao = request.form.get("descricao") or None
-    produto.quantidade = int(request.form.get("quantidade", 0))
+    produto.descricao    = request.form.get("descricao") or None
+    produto.quantidade   = nova_qtd
     produto.estoque_minimo = int(request.form.get("estoque_minimo", 5))
-    produto.preco_custo = float(request.form.get("preco_custo", 0))
-    produto.preco_venda = float(request.form.get("preco_venda", 0))
+    produto.preco_custo  = float(request.form.get("preco_custo", 0))
+    produto.preco_venda  = float(request.form.get("preco_venda", 0))
 
     nova_imagem = _salvar_imagem(request.files.get("imagem"))
     if nova_imagem:
         produto.imagem_url = nova_imagem
+
+    # Registra movimentação de estoque se a quantidade mudou
+    if diff != 0:
+        tipo_mov = "entrada" if diff > 0 else "saida"
+        motivo   = f"Reposição via edição ({'+' if diff > 0 else ''}{diff} un.)"
+        db.add(models.MovimentacaoEstoque(
+            produto_id=produto.id, tipo=tipo_mov,
+            quantidade=abs(diff), motivo=motivo,
+        ))
+        # Custo de produção para entradas com preco_custo
+        if diff > 0 and produto.preco_custo > 0:
+            hoje = datetime.now()
+            db.add(models.Despesa(
+                descricao        = f"Produção: {produto.nome} × {diff} un. (reposição)",
+                valor            = round(produto.preco_custo * diff, 2),
+                tipo             = "variavel",
+                categoria        = "Custo de Produção",
+                data_competencia = datetime(hoje.year, hoje.month, 1),
+            ))
 
     db.commit()
 
@@ -275,11 +310,13 @@ def ajustar(produto_id):
     if tipo == "entrada":
         produto.quantidade += quantidade
         if produto.preco_custo > 0:
-            db.add(models.MovimentacaoFinanceira(
-                tipo="saida",
-                categoria="Custo de Produção",
-                descricao=f"Produção: {produto.nome} × {quantidade} un.",
-                valor=round(produto.preco_custo * quantidade, 2),
+            hoje = datetime.now()
+            db.add(models.Despesa(
+                descricao        = f"Produção: {produto.nome} × {quantidade} un.",
+                valor            = round(produto.preco_custo * quantidade, 2),
+                tipo             = "variavel",
+                categoria        = "Custo de Produção",
+                data_competencia = datetime(hoje.year, hoje.month, 1),
             ))
     # saida: subtrai do estoque (com verificação de saldo)
     elif tipo == "saida":
