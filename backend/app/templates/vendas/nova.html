@@ -97,6 +97,7 @@
 
   <!-- ── Painel lateral: dados da venda ─────────────────────────── -->
   <form method="POST" action="/vendas/nova" id="form-venda">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div id="hidden-inputs"></div>
 
     <div class="card card-padded" style="margin-bottom:var(--sp-4)">

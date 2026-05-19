@@ -61,6 +61,7 @@
       </h2>
       <form method="POST" action="/despesas/importar-fixas"
             onsubmit="return confirm('Importar todos os custos fixos ativos para {{ '%02d'|format(mes) }}/{{ ano }}?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="mes_referencia" value="{{ mes_str }}" />
         <button type="submit" class="btn btn-secondary btn-sm">
           ↓ Importar custos fixos
@@ -98,6 +99,7 @@
               <td>
                 <form method="POST" action="/despesas/{{ d.id }}/deletar"
                       onsubmit="return confirm('Excluir esta despesa?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <input type="hidden" name="mes_referencia" value="{{ mes_str }}" />
                   <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
@@ -130,6 +132,7 @@
     <div class="card card-padded">
       <h3 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-4)">Adicionar despesa</h3>
       <form method="POST" action="/despesas/nova">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="mes_referencia" value="{{ mes_str }}" />
         <div style="display:grid;grid-template-columns:2fr 1fr;gap:var(--sp-3)">
           <div class="form-group" style="margin:0">
@@ -170,6 +173,7 @@
 
       <!-- Novo custo fixo -->
       <form method="POST" action="/despesas/fixas/nova" style="margin-bottom:var(--sp-5)">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="mes_referencia" value="{{ mes_str }}" />
         <div class="form-group">
           <label class="form-label required">Descrição</label>
@@ -210,6 +214,7 @@
           {% if f.ativo %}
           <form method="POST" action="/despesas/fixas/{{ f.id }}/deletar"
                 onsubmit="return confirm('Desativar este custo fixo?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="mes_referencia" value="{{ mes_str }}" />
             <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)" title="Desativar">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>

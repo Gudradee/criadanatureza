@@ -89,6 +89,7 @@
     </div>
 
     <form method="POST" action="/parceiros/{{ parceiro.id }}/envio" id="form-envio">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div id="envio-linhas">
         {# linha gerada pelo JS #}
       </div>
@@ -155,12 +156,14 @@
         {% endif %}
         <div style="display:flex;gap:var(--sp-2);margin-top:var(--sp-3)">
           <form method="POST" action="/parceiros/{{ parceiro.id }}/devolucao/{{ sol.id }}/confirmar" style="flex:1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-primary btn-sm" style="width:100%;justify-content:center;font-size:var(--text-xs)">
               Confirmar recebimento
             </button>
           </form>
           <form method="POST" action="/parceiros/{{ parceiro.id }}/devolucao/{{ sol.id }}/rejeitar"
                 onsubmit="return confirm('Rejeitar esta solicitação?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--c-danger)">Rejeitar</button>
           </form>
         </div>

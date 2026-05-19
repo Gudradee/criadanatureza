@@ -20,6 +20,7 @@
 <div style="max-width:560px;margin:0 auto">
   <div class="card card-padded">
     <form method="POST" action="{% if parceiro %}/parceiros/{{ parceiro.id }}/editar{% else %}/parceiros/novo{% endif %}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="form-group">
         <label class="form-label required">Nome do parceiro / revendedor</label>
         <input class="form-input" name="nome" placeholder="Nome completo ou nome da loja"

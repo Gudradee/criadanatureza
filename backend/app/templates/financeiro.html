@@ -9,6 +9,7 @@
 {% if is_admin %}
 <form method="GET" action="/financeiro#kpis-admin" style="display:flex;gap:var(--sp-2);align-items:center">
   <input type="hidden" name="chart_aba"        value="{{ chart_aba }}"/>
+  <input type="hidden" name="chart_tipo"       value="{{ chart_tipo }}"/>
   <input type="hidden" name="chart_ano"        value="{{ chart_ano_c }}"/>
   {% if chart_produto_id_c  %}<input type="hidden" name="chart_produto_id"  value="{{ chart_produto_id_c }}"/>{% endif %}
   {% if chart_so_parceiros  %}<input type="hidden" name="chart_so_parceiros" value="1"/>{% endif %}
@@ -35,15 +36,12 @@
 {% if is_admin %}
 <!-- ── Análise Anual ──────────────────────────────────────────────────────── -->
 <div id="grafico-anual" class="card card-padded" style="margin-bottom:var(--sp-6)">
+<form method="GET" action="/financeiro#grafico-anual">
 
-  <!-- Controles: abas + filtros (formulário puro GET) -->
-  <form method="GET" action="/financeiro#grafico-anual" style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-5);flex-wrap:wrap">
-    <input type="hidden" name="mes"    value="{{ mes_str }}"/>
-    {% if ponto_id_filtro  %}<input type="hidden" name="ponto_id"    value="{{ ponto_id_filtro }}"/>{% endif %}
-    {% if metodo_id_filtro %}<input type="hidden" name="metodo_id"   value="{{ metodo_id_filtro }}"/>{% endif %}
-    {% if so_parceiros_prod %}<input type="hidden" name="so_parceiros" value="1"/>{% endif %}
+  <!-- ── Linha de controles ──────────────────────────────────────────── -->
+  <div style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-5);flex-wrap:wrap">
 
-    <!-- Abas como botões de submit -->
+    <!-- Abas (submit com name=chart_aba — vêm ANTES do hidden chart_aba) -->
     {% set tab_base = "padding:6px 14px;border:none;border-radius:6px;font-size:var(--text-sm);font-weight:600;cursor:pointer" %}
     <div style="display:flex;gap:2px;background:var(--bg-subtle);border-radius:var(--r-md);padding:3px">
       <button type="submit" name="chart_aba" value="faturamento"
@@ -54,9 +52,9 @@
         style="{{ tab_base }};{% if chart_aba=='despesas' %}background:#dc2626;color:#fff{% else %}background:transparent;color:var(--c-text-3){% endif %}">
         Despesas
       </button>
-      <button type="submit" name="chart_aba" value="balanco"
-        style="{{ tab_base }};{% if chart_aba=='balanco' %}background:#6d28d9;color:#fff{% else %}background:transparent;color:var(--c-text-3){% endif %}">
-        Balanço
+      <button type="submit" name="chart_aba" value="resultado"
+        style="{{ tab_base }};{% if chart_aba=='resultado' %}background:#6d28d9;color:#fff{% else %}background:transparent;color:var(--c-text-3){% endif %}">
+        Resultado
       </button>
       <button type="submit" name="chart_aba" value="por_local"
         style="{{ tab_base }};{% if chart_aba=='por_local' %}background:#d97706;color:#fff{% else %}background:transparent;color:var(--c-text-3){% endif %}">
@@ -64,14 +62,12 @@
       </button>
     </div>
 
-    <!-- Filtro: ano -->
     <select name="chart_ano" class="form-select" style="width:88px;height:36px;font-size:var(--text-sm)">
       {% for y in range(2023, chart_ano_c + 3) %}
       <option value="{{ y }}" {% if y == chart_ano_c %}selected{% endif %}>{{ y }}</option>
       {% endfor %}
     </select>
 
-    <!-- Filtro: produto -->
     <select name="chart_produto_id" class="form-select" style="width:200px;height:36px;font-size:var(--text-sm)">
       <option value="">Todos os produtos</option>
       {% for p in todos_produtos_chart %}
@@ -79,13 +75,12 @@
       {% endfor %}
     </select>
 
-    <!-- Filtro: só parceiros -->
     <select name="chart_so_parceiros" class="form-select" style="width:150px;height:36px;font-size:var(--text-sm)">
       <option value="">Todos os canais</option>
       <option value="1" {% if chart_so_parceiros %}selected{% endif %}>Só parceiros</option>
     </select>
 
-    <!-- Botão aplicar -->
+    <!-- Aplicar preserva a aba atual (submit com name=chart_aba, vem antes do hidden) -->
     <button type="submit" name="chart_aba" value="{{ chart_aba }}" class="btn btn-secondary btn-sm" style="height:36px">
       Aplicar
     </button>
@@ -107,138 +102,186 @@
         <span style="display:block">Resultado: <strong style="color:#38a3a5">{{ chart_totais.res | brl }}</strong></span>
       {% endif %}
     </div>
-  </form>
-
-  <!-- Gráfico SVG (renderizado no servidor, sem JavaScript) -->
-  {% if chart_aba in ('faturamento', 'despesas') %}
-  {# Barras mensais — tooltip via CSS hover #}
-  <svg viewBox="0 0 {{ chart_svg.w }} {{ chart_svg.h }}" style="width:100%;height:260px;display:block;overflow:visible">
-    <style>
-      .bar-g .tip-rect { opacity:0; }
-      .bar-g .tip-txt  { opacity:0; }
-      .bar-g:hover .tip-rect { opacity:1; }
-      .bar-g:hover .tip-txt  { opacity:1; }
-    </style>
-    {% for t in chart_svg.ticks %}
-    <line x1="{{ chart_svg.pl }}" y1="{{ t.y }}" x2="{{ chart_svg.w - chart_svg.pr }}" y2="{{ t.y }}"
-          stroke="#e8ecf0" stroke-width="1"/>
-    <text x="{{ chart_svg.pl - 5 }}" y="{{ t.y + 4 }}"
-          text-anchor="end" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif">{{ t.label }}</text>
-    {% endfor %}
-    <line x1="{{ chart_svg.pl }}" y1="{{ chart_svg.pb }}" x2="{{ chart_svg.w - chart_svg.pr }}" y2="{{ chart_svg.pb }}"
-          stroke="#d1d5db" stroke-width="1"/>
-    {% for b in chart_svg.bars %}
-    <g class="bar-g">
-      {# Área clicável invisível para ativar o hover mesmo em barras pequenas #}
-      <rect x="{{ b.x }}" y="{{ chart_svg.pl * 0 + 0 }}" width="{{ b.w if b.h > 0 else b.w + 1 }}"
-            height="{{ chart_svg.pb }}" fill="transparent"/>
-      {% if b.h > 0 %}
-      <rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}"
-            fill="{{ chart_svg.cf }}" stroke="{{ chart_svg.cs }}" stroke-width="0.5" rx="3"/>
-      {% endif %}
-      <text x="{{ b.lx }}" y="{{ chart_svg.ay }}"
-            text-anchor="middle" font-size="10" fill="#6b7280" font-family="system-ui,sans-serif">{{ b.mes }}</text>
-      {# Tooltip flutuante #}
-      <rect class="tip-rect" x="{{ b.lx - 32 }}" y="{{ b.y - 22 }}" width="64" height="18"
-            rx="4" fill="#1f2937" opacity="0"/>
-      <text class="tip-txt" x="{{ b.lx }}" y="{{ b.y - 9 }}"
-            text-anchor="middle" font-size="10" font-weight="600" fill="#fff"
-            font-family="system-ui,sans-serif">{{ b.val | brl }}</text>
-    </g>
-    {% endfor %}
-  </svg>
-
-  {% elif chart_aba == 'por_local' %}
-  {# Barras horizontais por local #}
-  {% if chart_svg %}
-  <svg viewBox="0 0 {{ chart_svg.sw }} {{ chart_svg.sh }}"
-       style="width:100%;display:block">
-    <style>
-      .hbar-g .hbar-rect { transition: opacity .1s; }
-      .hbar-g:hover .hbar-rect { opacity:1 !important; filter:brightness(1.08); }
-    </style>
-    {# Grid vertical #}
-    {% for t in chart_svg.ticks_x %}
-    <line x1="{{ t.x }}" y1="{{ chart_svg.pt }}" x2="{{ t.x }}" y2="{{ chart_svg.grid_btm }}"
-          stroke="#e8ecf0" stroke-width="1"/>
-    <text x="{{ t.x }}" y="{{ chart_svg.label_y }}"
-          text-anchor="middle" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif">{{ t.label }}</text>
-    {% endfor %}
-    {# Eixo Y (linha vertical esquerda) #}
-    <line x1="{{ chart_svg.pl }}" y1="{{ chart_svg.pt }}" x2="{{ chart_svg.pl }}" y2="{{ chart_svg.grid_btm }}"
-          stroke="#d1d5db" stroke-width="1"/>
-    {# Barras #}
-    {% for b in chart_svg.bars %}
-    <g class="hbar-g">
-      <text x="{{ chart_svg.pl - 10 }}" y="{{ b.ty }}"
-            text-anchor="end" font-size="12" fill="#374151" font-family="system-ui,sans-serif"
-            font-weight="500">{{ b.label }}</text>
-      {% if b.w > 0 %}
-      <rect class="hbar-rect" x="{{ chart_svg.pl }}" y="{{ b.y }}"
-            width="{{ b.w }}" height="{{ b.bar_h }}"
-            fill="rgba(56,163,165,0.72)" stroke="rgba(56,163,165,1)" stroke-width="0.5" rx="5"/>
-      <text x="{{ b.vx }}" y="{{ b.ty }}"
-            font-size="12" font-weight="700" fill="#059669" font-family="system-ui,sans-serif">{{ b.value | brl }}</text>
-      {% endif %}
-    </g>
-    {% endfor %}
-  </svg>
-  {% else %}
-  <div style="text-align:center;padding:var(--sp-10);color:var(--c-text-3);font-size:var(--text-sm)">
-    Nenhuma venda por local registrada em {{ chart_ano_c }}.
   </div>
-  {% endif %}
 
-  {% else %}
-  {# Linhas (Balanço) — tooltip nos dots via CSS hover #}
-  <svg viewBox="0 0 {{ chart_svg.w }} {{ chart_svg.h }}" style="width:100%;height:260px;display:block;overflow:visible">
-    <style>
-      .dot-g .tip-rect { opacity:0; }
-      .dot-g .tip-txt  { opacity:0; }
-      .dot-g:hover .tip-rect { opacity:1; }
-      .dot-g:hover .tip-txt  { opacity:1; }
-      .dot-g:hover circle    { r:5; }
-    </style>
-    {% for t in chart_svg.ticks %}
-    <line x1="{{ chart_svg.pl }}" y1="{{ t.y }}" x2="{{ chart_svg.w - chart_svg.pr }}" y2="{{ t.y }}"
-          stroke="#e8ecf0" stroke-width="1"/>
-    <text x="{{ chart_svg.pl - 5 }}" y="{{ t.y + 4 }}"
-          text-anchor="end" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif">{{ t.label }}</text>
-    {% endfor %}
-    <line x1="{{ chart_svg.pl }}" y1="{{ chart_svg.y0 }}" x2="{{ chart_svg.w - chart_svg.pr }}" y2="{{ chart_svg.y0 }}"
-          stroke="#d1d5db" stroke-width="1" stroke-dasharray="4,3"/>
-    {% for s in chart_svg.series %}
-    {% if s.fill_color %}
-    <polygon points="{{ s.fill_poly }}" fill="{{ s.fill_color }}"/>
-    {% endif %}
-    <polyline points="{{ s.poly }}" fill="none" stroke="{{ s.color }}" stroke-width="2"
-              stroke-linejoin="round" stroke-linecap="round"/>
-    {% for p in s.pts %}
-    <g class="dot-g">
-      <circle cx="{{ p.x }}" cy="{{ p.y }}" r="4" fill="{{ s.color }}" stroke="#fff" stroke-width="1.5"/>
-      <rect class="tip-rect" x="{{ p.x - 34 }}" y="{{ p.y - 24 }}" width="68" height="18"
-            rx="4" fill="#1f2937"/>
-      <text class="tip-txt" x="{{ p.x }}" y="{{ p.y - 11 }}"
-            text-anchor="middle" font-size="10" font-weight="600" fill="#fff"
-            font-family="system-ui,sans-serif">{{ p.val | brl }}</text>
-    </g>
-    {% endfor %}
-    {% endfor %}
-    {% for m in chart_svg.meses %}
-    <text x="{{ m.x }}" y="{{ chart_svg.ay }}"
-          text-anchor="middle" font-size="10" fill="#6b7280" font-family="system-ui,sans-serif">{{ m.label }}</text>
-    {% endfor %}
-  </svg>
-  <div style="display:flex;gap:var(--sp-5);justify-content:center;margin-top:var(--sp-3)">
-    {% for s in chart_svg.series %}
-    <div style="display:flex;align-items:center;gap:6px;font-size:var(--text-xs);color:var(--c-text-2)">
-      <div style="width:20px;height:2.5px;background:{{ s.color }};border-radius:2px"></div>
-      {{ s.label }}
+  <!-- Parâmetros ocultos (depois dos botões de aba para que o botão clicado tenha precedência) -->
+  <input type="hidden" name="mes"      value="{{ mes_str }}"/>
+  {% if ponto_id_filtro  %}<input type="hidden" name="ponto_id"    value="{{ ponto_id_filtro }}"/>{% endif %}
+  {% if metodo_id_filtro %}<input type="hidden" name="metodo_id"   value="{{ metodo_id_filtro }}"/>{% endif %}
+  {% if so_parceiros_prod%}<input type="hidden" name="so_parceiros" value="1"/>{% endif %}
+  <input type="hidden" name="chart_aba" value="{{ chart_aba }}"/>
+
+  <!-- ── Gráfico + seletor de visualização ──────────────────────────── -->
+  <div style="display:flex;gap:var(--sp-3);align-items:flex-start">
+
+    <!-- Área do gráfico SVG -->
+    <div style="flex:1;min-width:0">
+
+      {# ── Barras mensais ── #}
+      {% if chart_tipo == 'bar' %}
+      <svg viewBox="0 0 {{ chart_svg.w }} {{ chart_svg.h }}" style="width:100%;height:260px;display:block;overflow:visible">
+        <style>
+          .bar-g .tip-rect { opacity:0; }
+          .bar-g .tip-txt  { opacity:0; }
+          .bar-g:hover .tip-rect { opacity:1; }
+          .bar-g:hover .tip-txt  { opacity:1; }
+        </style>
+        {% for t in chart_svg.ticks %}
+        <line x1="{{ chart_svg.pl }}" y1="{{ t.y }}" x2="{{ chart_svg.w - chart_svg.pr }}" y2="{{ t.y }}"
+              stroke="#e8ecf0" stroke-width="1"/>
+        <text x="{{ chart_svg.pl - 5 }}" y="{{ t.y + 4 }}"
+              text-anchor="end" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif">{{ t.label }}</text>
+        {% endfor %}
+        <line x1="{{ chart_svg.pl }}" y1="{{ chart_svg.pb }}" x2="{{ chart_svg.w - chart_svg.pr }}" y2="{{ chart_svg.pb }}"
+              stroke="#d1d5db" stroke-width="1"/>
+        {% for b in chart_svg.bars %}
+        <g class="bar-g">
+          <rect x="{{ b.x }}" y="0" width="{{ b.w if b.h > 0 else b.w + 1 }}"
+                height="{{ chart_svg.pb }}" fill="transparent"/>
+          {% if b.h > 0 %}
+          <rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}"
+                fill="{{ chart_svg.cf }}" stroke="{{ chart_svg.cs }}" stroke-width="0.5" rx="3"/>
+          {% endif %}
+          <text x="{{ b.lx }}" y="{{ chart_svg.ay }}"
+                text-anchor="middle" font-size="10" fill="#6b7280" font-family="system-ui,sans-serif">{{ b.mes }}</text>
+          <rect class="tip-rect" x="{{ b.lx - 32 }}" y="{{ b.y - 22 }}" width="64" height="18"
+                rx="4" fill="#1f2937" opacity="0"/>
+          <text class="tip-txt" x="{{ b.lx }}" y="{{ b.y - 9 }}"
+                text-anchor="middle" font-size="10" font-weight="600" fill="#fff"
+                font-family="system-ui,sans-serif">{{ b.val | brl }}</text>
+        </g>
+        {% endfor %}
+      </svg>
+
+      {# ── Linhas ── #}
+      {% elif chart_tipo == 'line' %}
+      <svg viewBox="0 0 {{ chart_svg.w }} {{ chart_svg.h }}" style="width:100%;height:260px;display:block;overflow:visible">
+        <style>
+          .dot-g .tip-rect { opacity:0; }
+          .dot-g .tip-txt  { opacity:0; }
+          .dot-g:hover .tip-rect { opacity:1; }
+          .dot-g:hover .tip-txt  { opacity:1; }
+          .dot-g:hover circle    { r:5; }
+        </style>
+        {% for t in chart_svg.ticks %}
+        <line x1="{{ chart_svg.pl }}" y1="{{ t.y }}" x2="{{ chart_svg.w - chart_svg.pr }}" y2="{{ t.y }}"
+              stroke="#e8ecf0" stroke-width="1"/>
+        <text x="{{ chart_svg.pl - 5 }}" y="{{ t.y + 4 }}"
+              text-anchor="end" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif">{{ t.label }}</text>
+        {% endfor %}
+        <line x1="{{ chart_svg.pl }}" y1="{{ chart_svg.y0 }}" x2="{{ chart_svg.w - chart_svg.pr }}" y2="{{ chart_svg.y0 }}"
+              stroke="#d1d5db" stroke-width="1" stroke-dasharray="4,3"/>
+        {% for s in chart_svg.series %}
+        {% if s.fill_color %}
+        <polygon points="{{ s.fill_poly }}" fill="{{ s.fill_color }}"/>
+        {% endif %}
+        <polyline points="{{ s.poly }}" fill="none" stroke="{{ s.color }}" stroke-width="2"
+                  stroke-linejoin="round" stroke-linecap="round"/>
+        {% for p in s.pts %}
+        <g class="dot-g">
+          <circle cx="{{ p.x }}" cy="{{ p.y }}" r="4" fill="{{ s.color }}" stroke="#fff" stroke-width="1.5"/>
+          <rect class="tip-rect" x="{{ p.x - 34 }}" y="{{ p.y - 24 }}" width="68" height="18"
+                rx="4" fill="#1f2937"/>
+          <text class="tip-txt" x="{{ p.x }}" y="{{ p.y - 11 }}"
+                text-anchor="middle" font-size="10" font-weight="600" fill="#fff"
+                font-family="system-ui,sans-serif">{{ p.val | brl }}</text>
+        </g>
+        {% endfor %}
+        {% endfor %}
+        {% for m in chart_svg.meses %}
+        <text x="{{ m.x }}" y="{{ chart_svg.ay }}"
+              text-anchor="middle" font-size="10" fill="#6b7280" font-family="system-ui,sans-serif">{{ m.label }}</text>
+        {% endfor %}
+      </svg>
+      {% if chart_svg.series | length > 1 %}
+      <div style="display:flex;gap:var(--sp-5);justify-content:center;margin-top:var(--sp-3)">
+        {% for s in chart_svg.series %}
+        <div style="display:flex;align-items:center;gap:6px;font-size:var(--text-xs);color:var(--c-text-2)">
+          <div style="width:20px;height:2.5px;background:{{ s.color }};border-radius:2px"></div>
+          {{ s.label }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {# ── Pizza por local ── #}
+      {% elif chart_tipo == 'pie' %}
+      {% if chart_svg %}
+      <svg viewBox="0 0 {{ chart_svg.sw }} {{ chart_svg.sh }}" style="width:100%;display:block">
+        <style>
+          .pie-g path { transition: opacity .15s, filter .15s; }
+          .pie-g:hover path { opacity:.85; filter:brightness(1.1); }
+        </style>
+        {% for s in chart_svg.slices %}
+        <g class="pie-g">
+          <path d="{{ s.path }}" fill="{{ s.color }}" stroke="#fff" stroke-width="2"/>
+        </g>
+        {% endfor %}
+        {% for l in chart_svg.legend %}
+        <rect x="{{ chart_svg.leg_x }}" y="{{ l.ry }}" width="13" height="13" rx="3" fill="{{ l.color }}"/>
+        <text x="{{ chart_svg.leg_x + 20 }}" y="{{ l.ry + 10 }}"
+              font-size="12" fill="#374151" font-family="system-ui,sans-serif" font-weight="500">{{ l.label }}</text>
+        <text x="{{ chart_svg.sw - 8 }}" y="{{ l.ry + 10 }}"
+              text-anchor="end" font-size="11" font-weight="700" fill="#059669" font-family="system-ui,sans-serif">
+          {{ l.value | brl }}
+        </text>
+        <text x="{{ chart_svg.sw - 8 }}" y="{{ l.ry + 24 }}"
+              text-anchor="end" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif">{{ l.pct }}%</text>
+        {% endfor %}
+      </svg>
+      {% else %}
+      <div style="text-align:center;padding:var(--sp-10);color:var(--c-text-3);font-size:var(--text-sm)">
+        Nenhuma venda por local registrada em {{ chart_ano_c }}.
+      </div>
+      {% endif %}
+
+      {% endif %}{# /chart_tipo #}
+    </div>{# /área gráfico #}
+
+    <!-- ── Seletor vertical de tipo de visualização ─────────────────── -->
+    {%- set _act_bg = {'faturamento':'rgba(56,163,165,1)', 'despesas':'#dc2626', 'resultado':'#6d28d9', 'por_local':'#d97706'} -%}
+    {%- set _ac = _act_bg.get(chart_aba, '#38a3a5') -%}
+    <div style="display:flex;flex-direction:column;gap:6px;padding:6px;background:var(--bg-subtle);border-radius:var(--r-md);align-self:flex-start;margin-top:2px">
+      {% if chart_aba in ('faturamento', 'despesas') %}
+        {# Barras verticais #}
+        <button type="submit" name="chart_tipo" value="bar" title="Barras"
+          style="width:34px;height:34px;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;{% if chart_tipo=='bar' %}background:{{ _ac }};color:#fff{% else %}background:transparent;color:var(--c-text-3){% endif %}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+          </svg>
+        </button>
+        {# Linha #}
+        <button type="submit" name="chart_tipo" value="line" title="Linha"
+          style="width:34px;height:34px;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;{% if chart_tipo=='line' %}background:{{ _ac }};color:#fff{% else %}background:transparent;color:var(--c-text-3){% endif %}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+          </svg>
+        </button>
+      {% elif chart_aba == 'resultado' %}
+        {# Linha (padrão) #}
+        <button type="submit" name="chart_tipo" value="line" title="Linhas"
+          style="width:34px;height:34px;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;{% if chart_tipo=='line' %}background:{{ _ac }};color:#fff{% else %}background:transparent;color:var(--c-text-3){% endif %}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+          </svg>
+        </button>
+        {# Barras #}
+        <button type="submit" name="chart_tipo" value="bar" title="Barras"
+          style="width:34px;height:34px;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;{% if chart_tipo=='bar' %}background:{{ _ac }};color:#fff{% else %}background:transparent;color:var(--c-text-3){% endif %}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+          </svg>
+        </button>
+      {% endif %}
     </div>
-    {% endfor %}
-  </div>
-  {% endif %}
+  </div>{# /flex gráfico + seletor #}
 
+  <!-- hidden chart_tipo (depois dos botões de tipo para que o botão clicado tenha precedência) -->
+  <input type="hidden" name="chart_tipo" value="{{ chart_tipo }}"/>
+
+</form>
 </div>
 {% endif %}
 
@@ -601,6 +644,7 @@
               <td>
                 {% if t.id %}
                 <form method="POST" action="/financeiro/{{ t.id }}/deletar" onsubmit="return confirm('Excluir esta transação?')" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Excluir" style="color:var(--c-danger)">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
                   </button>
@@ -627,6 +671,7 @@
   <div class="card card-padded" style="align-self:start">
     <h3 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-5)">Nova transação</h3>
     <form method="POST" action="/financeiro/nova">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="form-group">
         <label class="form-label required">Tipo</label>
         <select class="form-select" name="tipo" required>
