@@ -338,8 +338,11 @@ def criar():
 @bp.route("/<int:venda_id>/recibo")
 @login_required
 def recibo(venda_id):
-    db    = get_db()
-    venda = db.query(models.VendaFinal).get(venda_id)
+    db      = get_db()
+    usuario = get_usuario_atual()
+    venda   = db.query(models.VendaFinal).get(venda_id)
     if not venda:
         abort(404)
+    if usuario.role != "admin" and venda.parceiro_id != usuario.parceiro_id:
+        abort(403)
     return render_template("vendas/recibo.html", active_page="caixa", venda=venda)
