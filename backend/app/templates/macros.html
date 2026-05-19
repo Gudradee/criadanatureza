@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+{% block title %}Macros{% endblock %}
+{% block page_title %}Macros{% endblock %}
+{% block page_subtitle %}Indicadores e projeções — {{ mes_nome }} {{ ano }}{% endblock %}
+
+{% block content %}
+
+{# ── Setas de tendência ── #}
+{# sobe = positivo/favorável, desce = negativo/desfavorável #}
+{%- macro seta_cima() -%}
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+{%- endmacro -%}
+{%- macro seta_baixo() -%}
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+{%- endmacro -%}
+
+{%- macro tendencia(var, positivo_e_bom=true) -%}
+  {%- if var is not none -%}
+    {%- if var > 0 -%}
+      {%- if positivo_e_bom -%}
+      <span style="display:inline-flex;align-items:center;gap:2px;color:var(--c-teal);font-size:var(--text-xs);font-weight:600">{{ seta_cima() }}+{{ var }}%</span>
+      {%- else -%}
+      <span style="display:inline-flex;align-items:center;gap:2px;color:var(--c-danger);font-size:var(--text-xs);font-weight:600">{{ seta_cima() }}+{{ var }}%</span>
+      {%- endif -%}
+    {%- elif var < 0 -%}
+      {%- if positivo_e_bom -%}
+      <span style="display:inline-flex;align-items:center;gap:2px;color:var(--c-danger);font-size:var(--text-xs);font-weight:600">{{ seta_baixo() }}{{ var }}%</span>
+      {%- else -%}
+      <span style="display:inline-flex;align-items:center;gap:2px;color:var(--c-teal);font-size:var(--text-xs);font-weight:600">{{ seta_baixo() }}{{ var }}%</span>
+      {%- endif -%}
+    {%- else -%}
+      <span style="font-size:var(--text-xs);color:var(--c-text-3)">estável</span>
+    {%- endif -%}
+  {%- endif -%}
+{%- endmacro -%}
+
+<div style="max-width:920px;margin:0 auto;display:flex;flex-direction:column;gap:var(--sp-8)">
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- BLOCO 1 — Saúde Financeira                                            -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <section class="page-section">
+    <h2 class="section-title" style="margin-bottom:var(--sp-5)">Saúde financeira do mês</h2>
+
+    <!-- Linha 1: 4 cartões de resumo -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-4);margin-bottom:var(--sp-4)">
+
+      <!-- Receita líquida -->
+      <div class="card card-padded" style="display:flex;flex-direction:column;gap:var(--sp-2)">
+        <span style="font-size:var(--text-xs);color:var(--c-text-3);text-transform:uppercase;letter-spacing:.5px">Receita do mês</span>
+        <span style="font-size:1.4rem;font-weight:700;color:var(--c-text-1)">{{ bloco1.receita_mes | brl }}</span>
+        <div style="display:flex;align-items:center;gap:var(--sp-2)">
+          {{ tendencia(bloco1.var_receita) }}
+          <span style="font-size:var(--text-xs);color:var(--c-text-3)">vs {{ bloco1.mes_ant_nome }}</span>
+        </div>
+      </div>
+
+      <!-- Despesas -->
+      <div class="card card-padded" style="display:flex;flex-direction:column;gap:var(--sp-2)">
+        <span style="font-size:var(--text-xs);color:var(--c-text-3);text-transform:uppercase;letter-spacing:.5px">Despesas do mês</span>
+        <span style="font-size:1.4rem;font-weight:700;color:var(--c-text-1)">{{ bloco1.despesas_mes | brl }}</span>
+        <span style="font-size:var(--text-xs);color:var(--c-text-3)">fixas + variáveis + custos</span>
+      </div>
+
+      <!-- Lucro -->
+      <div class="card card-padded" style="display:flex;flex-direction:column;gap:var(--sp-2)">
+        <span style="font-size:var(--text-xs);color:var(--c-text-3);text-transform:uppercase;letter-spacing:.5px">Lucro do mês</span>
+        <span style="font-size:1.4rem;font-weight:700;color:{% if bloco1.lucro_mes >= 0 %}var(--c-teal){% else %}var(--c-danger){% endif %}">
+          {{ bloco1.lucro_mes | brl }}
+        </span>
+        <div style="display:flex;align-items:center;gap:var(--sp-2)">
+          {{ tendencia(bloco1.var_lucro) }}
+          <span style="font-size:var(--text-xs);color:var(--c-text-3)">vs {{ bloco1.mes_ant_nome }}</span>
+        </div>
+      </div>
+
+      <!-- Margem líquida -->
+      <div class="card card-padded" style="display:flex;flex-direction:column;gap:var(--sp-2)">
+        <span style="font-size:var(--text-xs);color:var(--c-text-3);text-transform:uppercase;letter-spacing:.5px">Margem líquida</span>
+        <span style="font-size:1.4rem;font-weight:700;color:{% if bloco1.margem_pct >= 0 %}var(--c-text-1){% else %}var(--c-danger){% endif %}">
+          {{ bloco1.margem_pct }}%
+        </span>
+        <span style="font-size:var(--text-xs);color:var(--c-text-3)">
+          {% if bloco1.margem_pct >= 20 %}margem saudável
+          {% elif bloco1.margem_pct >= 5 %}margem apertada
+          {% elif bloco1.margem_pct >= 0 %}margem mínima
+          {% else %}operando no prejuízo{% endif %}
+        </span>
+      </div>
+
+    </div>
+
+    <!-- Linha 2: Projeção + Break-even -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
+
+      <!-- Projeção de fechamento do mês -->
+      <div class="card card-padded">
+        <h3 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-4)">Projeção para o fim do mês</h3>
+        <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:var(--sp-4)">
+          Baseado no ritmo dos últimos {{ dia_atual }} dias, faltam {{ bloco1.dias_restantes }} dias para fechar {{ mes_nome }}.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:var(--text-sm);color:var(--c-text-2)">Receita projetada</span>
+            <span style="font-size:var(--text-sm);font-weight:600">{{ bloco1.receita_projetada | brl }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:var(--text-sm);color:var(--c-text-2)">Lucro projetado</span>
+            <span style="font-size:var(--text-sm);font-weight:600;color:{% if bloco1.lucro_projetado >= 0 %}var(--c-teal){% else %}var(--c-danger){% endif %}">
+              {{ bloco1.lucro_projetado | brl }}
+            </span>
+          </div>
+          <!-- Mini barra de progresso do mês -->
+          <div style="margin-top:var(--sp-2)">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:var(--text-xs);color:var(--c-text-3)">Progresso do mês</span>
+              <span style="font-size:var(--text-xs);color:var(--c-text-3)">{{ dia_atual }}/{{ dias_no_mes }} dias</span>
+            </div>
+            <div style="height:6px;background:var(--c-border-soft);border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:{{ ((dia_atual / dias_no_mes) * 100) | round(0) }}%;background:var(--c-teal);border-radius:3px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Break-even + Comparativo mês anterior -->
+      <div class="card card-padded">
+        <h3 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-4)">Ponto de equilíbrio e comparativo</h3>
+
+        {% if bloco1.breakeven_pct is not none %}
+        <div style="margin-bottom:var(--sp-5)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:var(--sp-2)">
+            <span style="font-size:var(--text-xs);color:var(--c-text-3)">Despesas fixas cobertas pela receita</span>
+            <span style="font-size:var(--text-xs);font-weight:600;color:{% if bloco1.breakeven_pct >= 100 %}var(--c-teal){% else %}var(--c-text-2){% endif %}">
+              {{ bloco1.breakeven_pct }}%
+            </span>
+          </div>
+          <div style="height:8px;background:var(--c-border-soft);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:{{ bloco1.breakeven_pct }}%;background:{% if bloco1.breakeven_pct >= 100 %}var(--c-teal){% elif bloco1.breakeven_pct >= 60 %}#d97706{% else %}var(--c-danger){% endif %};border-radius:4px;transition:width .4s"></div>
+          </div>
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-top:var(--sp-2)">
+            {% if bloco1.breakeven_pct >= 100 %}Despesas fixas já pagas — o restante é lucro.
+            {% else %}Faltam {{ bloco1.desp_fixas_mes | brl }} em receita para cobrir os custos fixos.{% endif %}
+          </p>
+        </div>
+        {% endif %}
+
+        <div style="display:flex;flex-direction:column;gap:var(--sp-3);border-top:1px solid var(--c-border-soft);padding-top:var(--sp-4)">
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:var(--sp-1)">Comparativo com {{ bloco1.mes_ant_nome }}</p>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:var(--text-sm);color:var(--c-text-2)">Receita</span>
+            <div style="display:flex;align-items:center;gap:var(--sp-2)">
+              <span style="font-size:var(--text-xs);color:var(--c-text-3)">{{ bloco1.receita_ant | brl }}</span>
+              {{ tendencia(bloco1.var_receita) }}
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:var(--text-sm);color:var(--c-text-2)">Lucro</span>
+            <div style="display:flex;align-items:center;gap:var(--sp-2)">
+              <span style="font-size:var(--text-xs);color:var(--c-text-3)">{{ bloco1.lucro_ant | brl }}</span>
+              {{ tendencia(bloco1.var_lucro) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- BLOCO 2 — Inteligência de Produtos                                    -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <section class="page-section">
+    <h2 class="section-title" style="margin-bottom:var(--sp-5)">Inteligência de produtos</h2>
+
+    <!-- Destaques -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4);margin-bottom:var(--sp-4)">
+
+      <!-- Maior ROI -->
+      <div class="card card-padded">
+        <span style="font-size:var(--text-xs);color:var(--c-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:var(--sp-2);display:block">Produto mais rentável (ROI)</span>
+        {% if bloco2.mais_lucrativo %}
+        <p style="font-size:1rem;font-weight:700;color:var(--c-text-1);margin-bottom:var(--sp-3)">{{ bloco2.mais_lucrativo.nome }}</p>
+        <div style="display:flex;gap:var(--sp-5)">
+          <div>
+            <span style="font-size:var(--text-xs);color:var(--c-text-3)">Retorno sobre custo</span>
+            <p style="font-size:var(--text-lg);font-weight:700;color:var(--c-teal)">
+              {% if bloco2.mais_lucrativo.roi is not none %}+{{ bloco2.mais_lucrativo.roi }}%{% else %}—{% endif %}
+            </p>
+          </div>
+          <div>
+            <span style="font-size:var(--text-xs);color:var(--c-text-3)">Margem</span>
+            <p style="font-size:var(--text-lg);font-weight:700">{{ bloco2.mais_lucrativo.margem }}%</p>
+          </div>
+          <div>
+            <span style="font-size:var(--text-xs);color:var(--c-text-3)">Lucro gerado</span>
+            <p style="font-size:var(--text-lg);font-weight:700">{{ bloco2.mais_lucrativo.lucro | brl }}</p>
+          </div>
+        </div>
+        {% else %}
+        <p style="font-size:var(--text-sm);color:var(--c-text-3)">Sem dados de vendas ainda.</p>
+        {% endif %}
+      </div>
+
+      <!-- Mais vendido -->
+      <div class="card card-padded">
+        <span style="font-size:var(--text-xs);color:var(--c-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:var(--sp-2);display:block">Produto mais vendido (quantidade)</span>
+        {% if bloco2.mais_vendido %}
+        <p style="font-size:1rem;font-weight:700;color:var(--c-text-1);margin-bottom:var(--sp-3)">{{ bloco2.mais_vendido.nome }}</p>
+        <div style="display:flex;gap:var(--sp-5)">
+          <div>
+            <span style="font-size:var(--text-xs);color:var(--c-text-3)">Unidades vendidas</span>
+            <p style="font-size:var(--text-lg);font-weight:700">{{ bloco2.mais_vendido.qtd_vendida }}</p>
+          </div>
+          <div>
+            <span style="font-size:var(--text-xs);color:var(--c-text-3)">Receita gerada</span>
+            <p style="font-size:var(--text-lg);font-weight:700">{{ bloco2.mais_vendido.receita | brl }}</p>
+          </div>
+          <div>
+            <span style="font-size:var(--text-xs);color:var(--c-text-3)">Margem</span>
+            <p style="font-size:var(--text-lg);font-weight:700">{{ bloco2.mais_vendido.margem }}%</p>
+          </div>
+        </div>
+        {% else %}
+        <p style="font-size:var(--text-sm);color:var(--c-text-3)">Sem dados de vendas ainda.</p>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Tabela de ROI por produto -->
+    {% if bloco2.roi_list %}
+    <div class="card card-padded" style="margin-bottom:var(--sp-4)">
+      <h3 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-4)">Desempenho por produto — histórico</h3>
+      <table class="table" style="width:100%">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th style="text-align:right">Qtd. vendida</th>
+            <th style="text-align:right">Receita</th>
+            <th style="text-align:right">Custo</th>
+            <th style="text-align:right">Lucro</th>
+            <th style="text-align:right">Margem</th>
+            <th style="text-align:right">ROI</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for item in bloco2.roi_list %}
+        <tr>
+          <td style="font-weight:500">{{ item.nome }}</td>
+          <td style="text-align:right;font-size:var(--text-sm)">{{ item.qtd_vendida }}</td>
+          <td style="text-align:right;font-size:var(--text-sm)">{{ item.receita | brl }}</td>
+          <td style="text-align:right;font-size:var(--text-sm);color:var(--c-text-3)">{{ item.custo_total | brl }}</td>
+          <td style="text-align:right;font-size:var(--text-sm);font-weight:600;color:{% if item.lucro >= 0 %}var(--c-teal){% else %}var(--c-danger){% endif %}">
+            {{ item.lucro | brl }}
+          </td>
+          <td style="text-align:right;font-size:var(--text-sm)">{{ item.margem }}%</td>
+          <td style="text-align:right;font-size:var(--text-sm);font-weight:600">
+            {% if item.roi is not none %}{{ item.roi }}%{% else %}<span style="color:var(--c-text-3)">—</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Giro de estoque -->
+    {% if bloco2.giro_list %}
+    <div class="card card-padded">
+      <h3 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-2)">Giro de estoque</h3>
+      <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:var(--sp-4)">
+        Estimativa de quantos dias o estoque atual dura, com base na taxa de vendas deste mês.
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-3)">
+        {% for item in bloco2.giro_list %}
+        <div style="padding:var(--sp-3);background:var(--bg-subtle);border-radius:var(--r-md);border:1px solid var(--c-border-soft)">
+          <p style="font-size:var(--text-xs);font-weight:600;color:var(--c-text-1);margin-bottom:var(--sp-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ item.nome }}">{{ item.nome }}</p>
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:var(--sp-2)">{{ item.estoque_atual }} un. em estoque</p>
+          {% if item.dias_para_escoar is not none %}
+            <span class="badge {% if item.dias_para_escoar <= 7 %}badge-warning{% elif item.dias_para_escoar <= 14 %}badge-warning{% endif %}">
+              ~{{ item.dias_para_escoar }} dias
+            </span>
+          {% elif item.sem_movimento %}
+            <span class="badge" style="color:var(--c-text-3)">sem saída no mês</span>
+          {% else %}
+            <span class="badge">sem estoque</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- BLOCO 3 — Alertas Preditivos                                          -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <section class="page-section">
+    <h2 class="section-title" style="margin-bottom:var(--sp-5)">Alertas e previsões</h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
+
+      <!-- Alertas de estoque -->
+      <div class="card card-padded">
+        <h3 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-2)">Estoque baixo ou zerado</h3>
+        <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:var(--sp-4)">
+          Produtos abaixo do nível mínimo definido ou sem unidades disponíveis.
+        </p>
+        {% if bloco3.alertas_estoque %}
+          <div style="display:flex;flex-direction:column;gap:0">
+          {% for a in bloco3.alertas_estoque %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+            <div>
+              <span style="font-size:var(--text-sm);font-weight:500">{{ a.nome }}</span>
+              <span style="font-size:var(--text-xs);color:var(--c-text-3);margin-left:var(--sp-2)">mín. {{ a.estoque_minimo }}</span>
+            </div>
+            {% if a.zerado %}
+            <span class="badge badge-warning">0 un.</span>
+            {% else %}
+            <span class="badge badge-warning">{{ a.estoque_atual }} un.</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+          </div>
+        {% else %}
+          <div style="padding:var(--sp-5);text-align:center">
+            <p style="font-size:var(--text-sm);color:var(--c-text-3)">Nenhum produto em nível crítico.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Coluna direita: despesas acima da média + canal mais rentável -->
+      <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+
+        <!-- Canal mais rentável -->
+        <div class="card card-padded">
+          <h3 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-4)">Canais de venda — {{ mes_nome }}</h3>
+          {% if bloco3.canais_mes %}
+            {%- set total_canais = bloco3.canais_mes | sum(attribute='receita') -%}
+            {% for canal in bloco3.canais_mes %}
+            <div style="margin-bottom:var(--sp-4)">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                <span style="font-size:var(--text-sm);font-weight:{% if loop.first %}600{% else %}400{% endif %}">
+                  {{ canal.nome }}{% if loop.first %} <span class="badge badge-teal" style="margin-left:var(--sp-1)">principal</span>{% endif %}
+                </span>
+                <span style="font-size:var(--text-sm);font-weight:600">{{ canal.receita | brl }}</span>
+              </div>
+              <div style="height:5px;background:var(--c-border-soft);border-radius:3px;overflow:hidden">
+                <div style="height:100%;width:{% if total_canais > 0 %}{{ ((canal.receita / total_canais) * 100) | round(0) }}{% else %}0{% endif %}%;background:var(--c-teal);border-radius:3px"></div>
+              </div>
+              <span style="font-size:var(--text-xs);color:var(--c-text-3)">{{ canal.num_vendas }} venda{% if canal.num_vendas != 1 %}s{% endif %}</span>
+            </div>
+            {% endfor %}
+          {% else %}
+            <p style="font-size:var(--text-sm);color:var(--c-text-3)">Nenhuma venda com canal registrado este mês.</p>
+          {% endif %}
+        </div>
+
+        <!-- Despesas acima da média -->
+        <div class="card card-padded">
+          <h3 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-2)">Despesas acima da média</h3>
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:var(--sp-4)">
+            Categorias com gasto mais de 20% acima da média dos últimos 3 meses.
+          </p>
+          {% if bloco3.alertas_despesas %}
+            {% for a in bloco3.alertas_despesas %}
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+              <div>
+                <span style="font-size:var(--text-sm);font-weight:500">{{ a.categoria }}</span>
+                <span style="font-size:var(--text-xs);color:var(--c-text-3);margin-left:var(--sp-2)">média: {{ a.media_anterior | brl }}</span>
+              </div>
+              <div style="text-align:right">
+                <p style="font-size:var(--text-sm);font-weight:600;color:var(--c-danger)">{{ a.total_atual | brl }}</p>
+                <span style="display:inline-flex;align-items:center;gap:2px;font-size:var(--text-xs);color:var(--c-danger)">
+                  {{ seta_cima() }}+{{ a.variacao_pct }}%
+                </span>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div style="padding:var(--sp-3);text-align:center">
+              <p style="font-size:var(--text-sm);color:var(--c-text-3)">Nenhuma despesa atípica identificada.</p>
+            </div>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
