@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}Pagamentos{% endblock %}
+{% block page_title %}Histórico de Pagamentos{% endblock %}
+{% block page_subtitle %}Contas a pagar em {{ "%02d"|format(mes) }}/{{ ano }}{% endblock %}
+
+{% block topbar_actions %}
+<form method="GET" action="/historico/pagamentos" style="display:flex;gap:var(--sp-2);align-items:center">
+  <input type="hidden" name="status" value="{{ status_filtro }}">
+  <select name="mes_num" class="form-select" style="width:130px;height:36px">
+    {% for n in range(1, 13) %}
+    <option value="{{ n }}" {% if n == mes %}selected{% endif %}>{{ meses_pt[n-1] }}</option>
+    {% endfor %}
+  </select>
+  <select name="mes_ano" class="form-select" style="width:85px;height:36px">
+    {% for y in range(2023, ano + 3) %}
+    <option value="{{ y }}" {% if y == ano %}selected{% endif %}>{{ y }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-secondary btn-sm" style="height:36px">Filtrar</button>
+  <a href="/historico/pagamentos/export.xlsx?mes={{ mes_str }}&status={{ status_filtro }}"
+     class="btn btn-secondary btn-sm" style="height:36px;display:inline-flex;align-items:center;gap:6px"
+     title="Exportar para Excel">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    Excel
+  </a>
+</form>
+{% endblock %}
+
+{% block content %}
+
+{# ── Cards de resumo ── #}
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4);margin-bottom:var(--sp-5)">
+  <div class="card card-padded">
+    <span style="font-size:var(--text-xs);color:var(--c-text-3);text-transform:uppercase;letter-spacing:.5px">Pago</span>
+    <p style="font-size:1.4rem;font-weight:700;color:var(--c-teal);margin:var(--sp-2) 0 0">{{ pago_geral | brl }}</p>
+  </div>
+  <div class="card card-padded">
+    <span style="font-size:var(--text-xs);color:var(--c-text-3);text-transform:uppercase;letter-spacing:.5px">A pagar</span>
+    <p style="font-size:1.4rem;font-weight:700;color:var(--c-danger);margin:var(--sp-2) 0 0">{{ pend_geral | brl }}</p>
+  </div>
+  <div class="card card-padded">
+    <span style="font-size:var(--text-xs);color:var(--c-text-3);text-transform:uppercase;letter-spacing:.5px">Total do mês</span>
+    <p style="font-size:1.4rem;font-weight:700;color:var(--c-text-1);margin:var(--sp-2) 0 0">{{ total_geral | brl }}</p>
+  </div>
+</div>
+
+{# ── Filtro de status ── #}
+<div class="card card-padded" style="margin-bottom:var(--sp-5);padding:var(--sp-3) var(--sp-4)">
+  <div style="display:flex;gap:var(--sp-2);align-items:center;flex-wrap:wrap">
+    <span style="font-size:var(--text-sm);color:var(--c-text-3);margin-right:var(--sp-2)">Mostrar:</span>
+    {% for st, label in [('todos','Todas'), ('pagos','Pagas'), ('pendentes','A pagar')] %}
+    <a href="/historico/pagamentos?mes={{ mes_str }}&status={{ st }}"
+       class="btn btn-sm {% if status_filtro == st %}btn-primary{% else %}btn-ghost{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+{% macro tabela_parcelas(parcelas, titulo, total_pago, total_pend, total) %}
+<div class="card card-padded" style="margin-bottom:var(--sp-5)">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-4);flex-wrap:wrap;gap:var(--sp-3)">
+    <h2 class="section-title" style="margin:0">{{ titulo }}</h2>
+    <div style="font-size:var(--text-xs);color:var(--c-text-3)">
+      Pago: <strong style="color:var(--c-teal)">{{ total_pago | brl }}</strong>
+      · A pagar: <strong style="color:var(--c-danger)">{{ total_pend | brl }}</strong>
+      · Total: <strong style="color:var(--c-text-1)">{{ total | brl }}</strong>
+    </div>
+  </div>
+  {% if not parcelas %}
+  <p style="text-align:center;color:var(--c-text-3);padding:var(--sp-5)">Nenhuma parcela neste grupo.</p>
+  {% else %}
+  <div class="table-wrapper" style="margin:0">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:80px;text-align:center">Pago</th>
+          <th>Vencimento</th>
+          <th>Descrição</th>
+          <th>Categoria</th>
+          <th style="text-align:center">Parcela</th>
+          <th style="text-align:right">Valor</th>
+          <th>Pago em</th>
+          <th style="width:120px"></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for p in parcelas %}
+      <tr>
+        <td style="text-align:center">
+          <form method="POST" action="/historico/pagamentos/{{ p.id }}/marcar" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit"
+                    title="{% if p.pago %}Desmarcar pagamento{% else %}Marcar como pago{% endif %}"
+                    style="background:none;border:none;cursor:pointer;padding:0">
+              {% if p.pago %}
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--c-teal);color:#fff">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </span>
+              {% else %}
+                <span style="display:inline-block;width:22px;height:22px;border-radius:50%;border:2px solid var(--c-border)"></span>
+              {% endif %}
+            </button>
+          </form>
+        </td>
+        <td style="font-size:var(--text-xs);white-space:nowrap">
+          {{ p.vencimento.strftime('%d/%m/%Y') if p.vencimento else '—' }}
+        </td>
+        <td style="font-size:var(--text-sm)">{{ p.despesa.descricao if p.despesa else '—' }}</td>
+        <td style="font-size:var(--text-sm);color:var(--c-text-3)">
+          <span class="badge" style="background:var(--bg-subtle)">{{ p.despesa.categoria if p.despesa and p.despesa.categoria else '—' }}</span>
+        </td>
+        <td style="text-align:center;font-size:var(--text-xs);color:var(--c-text-3)">
+          {{ p.numero }}/{{ p.total }}
+        </td>
+        <td style="text-align:right;font-weight:700;color:{% if p.pago %}var(--c-teal){% else %}var(--c-danger){% endif %}">
+          {{ p.valor | brl }}
+        </td>
+        <td style="font-size:var(--text-xs);color:var(--c-text-3)">
+          {{ p.pago_em | localdt if p.pago_em else '—' }}
+        </td>
+        <td>
+          {% if p.despesa %}
+          <button type="button" class="btn btn-ghost btn-sm"
+                  onclick="abrirParcelarModal({{ p.despesa.id }}, '{{ p.despesa.descricao | replace("'", "\\'") }}', {{ p.despesa.valor }})">
+            Parcelar
+          </button>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{{ tabela_parcelas(parcelas_prod, 'Custos de produção variáveis', pago_prod, pend_prod, total_prod) }}
+{{ tabela_parcelas(parcelas_out,  'Outras despesas',                 pago_out,  pend_out,  total_out)  }}
+
+{# ── Modal de reparcelamento ── #}
+<div id="modal-parcelar" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:var(--r-lg);width:min(560px,92vw);max-height:88vh;overflow:auto;padding:var(--sp-6);box-shadow:0 8px 32px rgba(0,0,0,.25)">
+    <h3 style="margin:0 0 var(--sp-2);font-size:1.1rem">Parcelar despesa</h3>
+    <p id="parcelar-info" style="margin:0 0 var(--sp-4);color:var(--c-text-3);font-size:var(--text-sm)"></p>
+
+    <form id="form-parcelar" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group">
+        <label class="form-label required">Quantidade de parcelas</label>
+        <input class="form-input" name="num_parcelas" id="num-parcelas" type="number" min="1" max="36" value="1"
+               oninput="gerarDatas()">
+      </div>
+      <div id="datas-parcelas"></div>
+      <div style="display:flex;justify-content:flex-end;gap:var(--sp-2);margin-top:var(--sp-5)">
+        <button type="button" class="btn btn-secondary" onclick="fecharParcelarModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar parcelamento</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function abrirParcelarModal(despesaId, descricao, valorTotal) {
+  document.getElementById('modal-parcelar').style.display = 'flex';
+  document.getElementById('parcelar-info').textContent =
+    '"' + descricao + '" — Total: R$ ' + valorTotal.toFixed(2).replace('.', ',');
+  document.getElementById('form-parcelar').action = '/historico/pagamentos/' + despesaId + '/parcelar';
+  document.getElementById('num-parcelas').value = 1;
+  gerarDatas();
+}
+function fecharParcelarModal() {
+  document.getElementById('modal-parcelar').style.display = 'none';
+}
+function gerarDatas() {
+  var n = parseInt(document.getElementById('num-parcelas').value || '1', 10);
+  if (isNaN(n) || n < 1) n = 1;
+  if (n > 36) n = 36;
+  var container = document.getElementById('datas-parcelas');
+  container.innerHTML = '';
+  var hoje = new Date();
+  for (var i = 1; i <= n; i++) {
+    var d = new Date(hoje.getFullYear(), hoje.getMonth() + (i - 1), hoje.getDate());
+    var iso = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    var html =
+      '<div class="form-group" style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-2)">' +
+      '<label class="form-label" style="margin:0;flex:0 0 110px">Parcela ' + i + '/' + n + '</label>' +
+      '<input class="form-input" type="date" name="parcela_data_' + i + '" value="' + iso + '" style="flex:1">' +
+      '</div>';
+    container.insertAdjacentHTML('beforeend', html);
+  }
+}
+
+document.getElementById('modal-parcelar').addEventListener('click', function(e){
+  if (e.target === this) fecharParcelarModal();
+});
+</script>
+
+{% endblock %}

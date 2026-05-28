@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}{{ hoje }}{% endblock %}
+
+{% block topbar_actions %}
+<form method="GET" action="/" style="display:flex;gap:var(--sp-2);align-items:center">
+  <select name="mes_num" class="form-select" style="width:130px;height:36px">
+    {% for n,l in [(1,'Janeiro'),(2,'Fevereiro'),(3,'Março'),(4,'Abril'),(5,'Maio'),(6,'Junho'),(7,'Julho'),(8,'Agosto'),(9,'Setembro'),(10,'Outubro'),(11,'Novembro'),(12,'Dezembro')] %}
+    <option value="{{ n }}" {% if n == mes_num %}selected{% endif %}>{{ l }}</option>
+    {% endfor %}
+  </select>
+  <select name="mes_ano" class="form-select" style="width:85px;height:36px">
+    {% for y in range(2023, mes_ano + 2) %}
+    <option value="{{ y }}" {% if y == mes_ano %}selected{% endif %}>{{ y }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-secondary btn-sm" style="height:36px">Filtrar</button>
+</form>
+{% endblock %}
+
+{% block content %}
+
+<section class="page-section">
+  <div class="grid-3">
+    <div class="kpi-card" style="--kpi-accent:var(--c-green);--kpi-icon-bg:#f0faf5;--kpi-icon-color:#059669">
+      <div class="kpi-header">
+        <span class="kpi-label">Faturamento do mês</span>
+        {# Ícone: cédula/dinheiro — receita que entra #}
+        <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01"/><path d="M18 12h.01"/></svg></div>
+      </div>
+      <div class="kpi-value">{{ financeiro.entradas_mes | brl }}</div>
+      <div class="kpi-footer">Receita bruta de vendas</div>
+    </div>
+
+    <div class="kpi-card" style="--kpi-accent:var(--c-danger);--kpi-icon-bg:#fef2f2;--kpi-icon-color:#dc2626">
+      <div class="kpi-header">
+        <span class="kpi-label">Despesa</span>
+        {# Ícone: recibo/nota — gastos pagos #}
+        <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></svg></div>
+      </div>
+      <div class="kpi-value">{{ financeiro.total_despesas | brl }}</div>
+      <div class="kpi-footer">Produção + fixas + variáveis</div>
+    </div>
+
+    <div class="kpi-card" style="--kpi-accent:var(--c-teal);--kpi-icon-bg:var(--c-teal-light);--kpi-icon-color:var(--c-teal)">
+      <div class="kpi-header">
+        <span class="kpi-label">Lucro real</span>
+        <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+      </div>
+      <div class="kpi-value" style="color:{% if financeiro.lucro_mes >= 0 %}var(--c-teal){% else %}var(--c-danger){% endif %}">
+        {{ financeiro.lucro_mes | brl }}
+      </div>
+      <div class="kpi-footer">Faturamento − todas as despesas</div>
+    </div>
+  </div>
+</section>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:var(--sp-5);margin-bottom:var(--sp-8)">
+
+  <div class="card card-padded">
+
+    {# Cabeçalho com legenda e totais #}
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--sp-4)">
+      <div>
+        <h2 class="section-title" style="margin-bottom:2px">Caixa do mês</h2>
+        <p style="font-size:var(--text-xs);color:var(--c-text-3)">{{ grafico_mes.mes_label }} — acumulado dia a dia</p>
+      </div>
+      <div style="display:flex;gap:var(--sp-5);align-items:center">
+        <div style="text-align:right">
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:2px">{{ grafico_mes.label_fat }}</p>
+          <p style="font-size:var(--text-sm);font-weight:700;color:#059669">{{ grafico_mes.fat_total | brl }}</p>
+        </div>
+        <div style="text-align:right">
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:2px">{{ grafico_mes.label_desp }}</p>
+          <p style="font-size:var(--text-sm);font-weight:700;color:#dc2626">{{ grafico_mes.desp_total | brl }}</p>
+        </div>
+        <div style="text-align:right;padding-left:var(--sp-4);border-left:1px solid var(--border-color)">
+          <p style="font-size:var(--text-xs);color:var(--c-text-3);margin-bottom:2px">{{ grafico_mes.label_saldo }}</p>
+          <p style="font-size:var(--text-base);font-weight:700;color:{% if grafico_mes.positivo %}var(--c-teal){% else %}#dc2626{% endif %}">
+            {{ grafico_mes.saldo_final | brl }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {# SVG — linha única do saldo do caixa #}
+    {% if grafico_mes.vazio %}
+    <div style="text-align:center;padding:var(--sp-10);color:var(--c-text-3);font-size:var(--text-sm)">
+      Nenhuma movimentação registrada este mês.
+    </div>
+    {% else %}
+    <svg viewBox="0 0 {{ grafico_mes.w }} {{ grafico_mes.h }}"
+         style="width:100%;display:block;overflow:visible">
+
+      {# Grid Y + labels #}
+      {% for t in grafico_mes.ticks %}
+      <line x1="{{ grafico_mes.pl }}" y1="{{ t.y }}"
+            x2="{{ grafico_mes.w - grafico_mes.pr }}" y2="{{ t.y }}"
+            stroke="var(--border-color)" stroke-width="1"/>
+      <text x="{{ grafico_mes.pl - 5 }}" y="{{ t.y + 4 }}"
+            text-anchor="end" font-size="10" fill="var(--c-text-3)">{{ t.label }}</text>
+      {% endfor %}
+
+      {# Linha do zero #}
+      <line x1="{{ grafico_mes.pl }}" y1="{{ grafico_mes.y0 }}"
+            x2="{{ grafico_mes.w - grafico_mes.pr }}" y2="{{ grafico_mes.y0 }}"
+            stroke="var(--c-text-3)" stroke-width="1" stroke-dasharray="3,3" opacity="0.35"/>
+
+      {# Área sob a linha do caixa #}
+      <polygon points="{{ grafico_mes.fill }}" fill="{{ grafico_mes.fill_cor }}"/>
+
+      {# Linha do caixa #}
+      <polyline points="{{ grafico_mes.poly }}"
+                fill="none" stroke="{{ grafico_mes.cor }}" stroke-width="2.5"
+                stroke-linejoin="round" stroke-linecap="round"/>
+
+      {# Ponto no dia atual #}
+      {% if grafico_mes.pts %}
+      {% set ultimo = grafico_mes.pts[-1] %}
+      <circle cx="{{ ultimo.x }}" cy="{{ ultimo.y }}" r="5"
+              fill="{{ grafico_mes.cor }}" stroke="white" stroke-width="2"/>
+      {% endif %}
+
+      {# Eixo X (dias) #}
+      <line x1="{{ grafico_mes.pl }}" y1="{{ grafico_mes.pb }}"
+            x2="{{ grafico_mes.w - grafico_mes.pr }}" y2="{{ grafico_mes.pb }}"
+            stroke="var(--border-color)" stroke-width="1"/>
+      {% for lbl in grafico_mes.labels %}
+      <text x="{{ lbl.x }}" y="{{ grafico_mes.ay }}"
+            text-anchor="middle" font-size="10" fill="var(--c-text-3)">{{ lbl.label }}</text>
+      {% endfor %}
+
+    </svg>
+    {% endif %}
+
+  </div>
+
+  <div class="card card-padded" style="display:flex;flex-direction:column;gap:var(--sp-4)">
+    <div class="section-header" style="margin-bottom:0">
+      <h2 class="section-title">Alertas de estoque</h2>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:var(--sp-3);flex:1">
+      {% if estoque.alertas %}
+        {% for alerta in estoque.alertas %}
+        <div class="alert alert-warning" style="padding:var(--sp-3) var(--sp-4)">
+          <div>
+            <div style="font-size:var(--text-sm);font-weight:600">{{ alerta.nome }}</div>
+            <div style="font-size:var(--text-xs);margin-top:2px">
+              {{ alerta.quantidade }} unidades · mínimo {{ alerta.estoque_minimo }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="font-size:var(--text-sm);color:var(--c-text-3);text-align:center;padding:var(--sp-5)">
+          Nenhum alerta no momento.
+        </p>
+      {% endif %}
+    </div>
+    <a href="/estoque" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center">Ver estoque completo</a>
+  </div>
+</div>
+
+<section class="page-section">
+  <div class="section-header">
+    <h2 class="section-title">Parceiros ativos</h2>
+    <a href="/parceiros" class="btn btn-ghost btn-sm">Ver todos</a>
+  </div>
+  {% if parceiros %}
+  <div class="grid-3">
+    {% for p in parceiros %}
+    <a href="/parceiros/{{ p.id }}" class="card card-padded" style="text-decoration:none;display:block">
+      <div style="display:flex;align-items:center;gap:var(--sp-3)">
+        <div class="avatar">{{ p.nome[0] | upper }}</div>
+        <div>
+          <div style="font-weight:600;font-size:var(--text-sm)">{{ p.nome }}</div>
+          {% if p.telefone %}<div style="font-size:var(--text-xs);color:var(--c-text-3)">{{ p.telefone }}</div>{% endif %}
+        </div>
+        <span class="badge {% if p.status == 'ativo' %}badge-teal{% else %}badge{% endif %}" style="margin-left:auto">
+          {{ p.status }}
+        </span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="color:var(--c-text-3);font-size:var(--text-sm)">Nenhum parceiro cadastrado.</p>
+  {% endif %}
+</section>
+{% endblock %}

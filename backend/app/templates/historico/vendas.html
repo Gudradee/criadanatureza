@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Histórico de Vendas{% endblock %}
+{% block page_title %}Histórico de Vendas{% endblock %}
+{% block page_subtitle %}{{ vendas | length }} venda(s) em {{ "%02d"|format(mes) }}/{{ ano }}{% endblock %}
+
+{% block topbar_actions %}
+<form method="GET" action="/historico/vendas" style="display:flex;gap:var(--sp-2);align-items:center">
+  <select name="mes_num" class="form-select" style="width:130px;height:36px">
+    {% for n in range(1, 13) %}
+    <option value="{{ n }}" {% if n == mes %}selected{% endif %}>{{ meses_pt[n-1] }}</option>
+    {% endfor %}
+  </select>
+  <select name="mes_ano" class="form-select" style="width:85px;height:36px">
+    {% for y in range(2023, ano + 3) %}
+    <option value="{{ y }}" {% if y == ano %}selected{% endif %}>{{ y }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-secondary btn-sm" style="height:36px">Filtrar</button>
+  <a href="/caixa/export.xlsx?mes={{ mes_str }}"
+     class="btn btn-secondary btn-sm" style="height:36px;display:inline-flex;align-items:center;gap:6px"
+     title="Exportar histórico de vendas do mês para Excel">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    Excel
+  </a>
+  <a href="/vendas/nova" class="btn btn-primary btn-sm">+ Nova Venda</a>
+</form>
+{% endblock %}
+
+{% block content %}
+{% if not vendas %}
+<div class="card card-padded" style="text-align:center;padding:var(--sp-10)">
+  <p style="color:var(--c-text-3);margin-bottom:var(--sp-4)">Nenhuma venda registrada neste mês.</p>
+  <a href="/vendas/nova" class="btn btn-primary">Registrar primeira venda</a>
+</div>
+{% else %}
+<div class="card">
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Data</th>
+          <th>Método</th>
+          <th>Ponto de venda</th>
+          <th>Parceiro</th>
+          <th style="text-align:right">Bruto</th>
+          <th style="text-align:right">Desconto</th>
+          <th style="text-align:right">Líquido</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for venda in vendas %}
+      <tr>
+        <td style="color:var(--c-text-3);font-size:var(--text-xs)">{{ venda.id }}</td>
+        <td style="font-size:var(--text-xs);white-space:nowrap">
+          {{ venda.data_venda.strftime('%d/%m/%Y %H:%M') if venda.data_venda else '—' }}
+        </td>
+        <td style="font-size:var(--text-sm)">
+          {% if venda.metodo_recebimento %}
+            <span class="badge" style="background:var(--bg-subtle)">{{ venda.metodo_recebimento.nome }}</span>
+          {% elif venda.forma_pagamento %}
+            <span class="badge" style="background:var(--bg-subtle)">{{ venda.forma_pagamento }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td style="font-size:var(--text-sm);color:var(--c-text-3)">
+          {{ venda.ponto_venda.nome if venda.ponto_venda else '—' }}
+        </td>
+        <td style="font-size:var(--text-sm);color:var(--c-text-3)">
+          {{ venda.parceiro.nome if venda.parceiro else '—' }}
+        </td>
+        <td style="text-align:right">{{ venda.valor_total_bruto | brl }}</td>
+        <td style="text-align:right;color:#dc2626">
+          {% if venda.valor_total_desconto > 0 %}−{{ venda.valor_total_desconto | brl }}{% else %}—{% endif %}
+        </td>
+        <td style="text-align:right;font-weight:700;color:#059669">{{ venda.valor_total_liquido | brl }}</td>
+        <td>
+          <a href="/vendas/{{ venda.id }}/recibo" class="btn btn-ghost btn-sm">Ver</a>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+{% block title %}Configurações{% endblock %}
+{% block page_title %}Configurações{% endblock %}
+{% block page_subtitle %}Categorias, usuários e preferências{% endblock %}
+
+{% block content %}
+<div style="max-width:720px;margin:0 auto">
+
+  <section class="page-section">
+    <div class="card card-padded">
+      <h2 class="section-title" style="margin-bottom:var(--sp-2)">Métodos de recebimento</h2>
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);margin-bottom:var(--sp-5)">
+        Formas de pagamento disponíveis para selecionar ao registrar uma venda.
+      </p>
+
+      <form method="POST" action="/configuracoes/metodos/novo"
+            style="display:grid;grid-template-columns:2fr 1fr auto;gap:var(--sp-3);margin-bottom:var(--sp-5);align-items:flex-end">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group" style="margin:0">
+          <label class="form-label required">Nome</label>
+          <input class="form-input" name="nome" placeholder="Ex: PIX, Dinheiro, Cartão crédito..." required />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Taxa (%)</label>
+          <input class="form-input" name="taxa_percentual" type="number" min="0" step="0.01" placeholder="0,00" />
+        </div>
+        <button type="submit" class="btn btn-primary">Adicionar</button>
+      </form>
+
+      {% if metodos %}
+        {% for m in metodos %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+          <div>
+            <span style="font-weight:500;font-size:var(--text-sm)">{{ m.nome }}</span>
+            {% if m.taxa_percentual > 0 %}
+            <span class="badge" style="margin-left:var(--sp-2);background:var(--bg-subtle)">
+              {{ "%.2f"|format(m.taxa_percentual * 100) }}% de taxa
+            </span>
+            {% endif %}
+            {% if not m.ativo %}
+            <span class="badge badge-warning" style="margin-left:var(--sp-2)">Inativo</span>
+            {% endif %}
+          </div>
+          {% if m.ativo %}
+          <form method="POST" action="/configuracoes/metodos/{{ m.id }}/deletar"
+                onsubmit="return confirm('Desativar método {{ m.nome }}?')" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)" title="Desativar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);text-align:center;padding:var(--sp-5)">Nenhum método cadastrado.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="page-section">
+    <div class="card card-padded">
+      <h2 class="section-title" style="margin-bottom:var(--sp-2)">Pontos de venda</h2>
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);margin-bottom:var(--sp-5)">
+        Locais ou canais onde as vendas acontecem.
+      </p>
+
+      <form method="POST" action="/configuracoes/pontos/novo"
+            style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:var(--sp-3);margin-bottom:var(--sp-5);align-items:flex-end">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group" style="margin:0">
+          <label class="form-label required">Nome</label>
+          <input class="form-input" name="nome" placeholder="Ex: Loja central, Feira de sábado..." required />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Localização</label>
+          <input class="form-input" name="localizacao" placeholder="Opcional..." />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Tipo</label>
+          <select class="form-select" name="tipo">
+            <option value="presencial">Presencial</option>
+            <option value="online">Online</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Adicionar</button>
+      </form>
+
+      {% if pontos %}
+        {% for p in pontos %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+          <div>
+            <span style="font-weight:500;font-size:var(--text-sm)">{{ p.nome }}</span>
+            <span class="badge" style="margin-left:var(--sp-2);background:var(--bg-subtle);text-transform:capitalize">{{ p.tipo }}</span>
+            {% if p.localizacao %}
+            <span style="font-size:var(--text-xs);color:var(--c-text-3);margin-left:var(--sp-2)">📍 {{ p.localizacao }}</span>
+            {% endif %}
+            {% if not p.ativo %}
+            <span class="badge badge-warning" style="margin-left:var(--sp-2)">Inativo</span>
+            {% endif %}
+          </div>
+          {% if p.ativo %}
+          <form method="POST" action="/configuracoes/pontos/{{ p.id }}/deletar"
+                onsubmit="return confirm('Desativar ponto {{ p.nome }}?')" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)" title="Desativar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);text-align:center;padding:var(--sp-5)">Nenhum ponto de venda cadastrado.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="page-section">
+    <div class="card card-padded">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-2);gap:var(--sp-3)">
+        <h2 class="section-title" style="margin:0">Parceiros</h2>
+        <a href="/parceiros/novo" class="btn btn-primary btn-sm">+ Novo parceiro</a>
+      </div>
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);margin-bottom:var(--sp-5)">
+        Ative, desative ou exclua parceiros. Inativar mantém o histórico de vendas e comissões — apenas oculta o parceiro de listas operacionais. Excluir apaga o cadastro permanentemente.
+      </p>
+
+      {% if parceiros %}
+      <table class="table" style="width:100%">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Contato</th>
+            <th style="text-align:right">Comissão</th>
+            <th>Status</th>
+            <th style="width:140px;text-align:right">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for p in parceiros %}
+        {%- set inativo = p.status != 'ativo' -%}
+        <tr style="{% if inativo %}opacity:.65{% endif %}">
+          <td style="font-weight:500">
+            <a href="/parceiros/{{ p.id }}" style="color:inherit;text-decoration:none">{{ p.nome }}</a>
+          </td>
+          <td style="font-size:var(--text-sm);color:var(--c-text-3)">
+            {% if p.telefone or p.email %}
+              {{ p.telefone or p.email }}
+            {% else %}—{% endif %}
+          </td>
+          <td style="text-align:right;font-size:var(--text-sm)">{{ "%.1f"|format(p.comissao_percentual * 100) }}%</td>
+          <td>
+            {% if inativo %}
+            <span class="badge" style="background:#f3f4f6;color:#6b7280">Inativo</span>
+            {% else %}
+            <span class="badge badge-teal">Ativo</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:var(--sp-2);justify-content:flex-end">
+              <a href="/parceiros/{{ p.id }}/editar" class="btn btn-ghost btn-sm btn-icon" title="Editar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </a>
+              <form method="POST" action="/parceiros/{{ p.id }}/toggle-status"
+                    onsubmit="return confirm('{% if inativo %}Reativar{% else %}Desativar{% endif %} parceiro {{ p.nome }}?')"
+                    style="display:inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-ghost btn-sm btn-icon"
+                        title="{% if inativo %}Reativar parceiro{% else %}Desativar parceiro{% endif %}"
+                        style="color:{% if inativo %}var(--c-teal){% else %}#d97706{% endif %}">
+                  {% if inativo %}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  {% else %}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                  {% endif %}
+                </button>
+              </form>
+              <form method="POST" action="/parceiros/{{ p.id }}/deletar"
+                    onsubmit="return confirm('Excluir o parceiro {{ p.nome }} permanentemente?\n\nIsso apaga o cadastro do parceiro. Vendas, envios e devoluções históricas vinculadas a ele permanecem no banco mas ficarão sem referência ao parceiro. Esta ação NÃO pode ser desfeita.')"
+                    style="display:inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Excluir definitivamente" style="color:var(--c-danger)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);text-align:center;padding:var(--sp-5)">Nenhum parceiro cadastrado.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="page-section">
+    <div class="card card-padded">
+      <h2 class="section-title" style="margin-bottom:var(--sp-2)">Administradores</h2>
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);margin-bottom:var(--sp-5)">
+        Logins com perfil de administrador. Os acessos de parceiros são gerenciados na seção Parceiros (acima).
+      </p>
+
+      <form method="POST" action="/configuracoes/usuarios/novo"
+            style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-5)">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="role" value="admin">
+        <div class="form-group" style="margin:0">
+          <label class="form-label required">Nome</label>
+          <input class="form-input" name="nome" placeholder="Nome completo" required />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label required">Usuário</label>
+          <input class="form-input" name="username" placeholder="login.sem.espacos" required />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label required">Senha (mín. 8 caracteres)</label>
+          <input class="form-input" type="password" name="senha" required />
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button type="submit" class="btn btn-primary" style="width:100%">Criar administrador</button>
+        </div>
+      </form>
+
+      {% if usuarios %}
+      <table class="table" style="width:100%">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Usuário</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for u in usuarios %}
+        <tr>
+          <td style="font-weight:500">{{ u.nome }}</td>
+          <td style="font-family:monospace;font-size:var(--text-sm)">{{ u.username }}</td>
+          <td>
+            {% if u.ativo %}
+            <span class="badge badge-teal">Ativo</span>
+            {% else %}
+            <span class="badge" style="background:#f3f4f6;color:#6b7280">Inativo</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:var(--sp-2)">
+
+              <form method="POST" action="/configuracoes/usuarios/{{ u.id }}/redefinir-senha"
+                    onsubmit="
+                      const s = prompt('Nova senha para {{ u.username }} (mín. 8 caracteres):');
+                      if (!s || s.length < 8) { alert('Senha muito curta.'); return false; }
+                      this.querySelector('[name=nova_senha]').value = s;
+                    ">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="nova_senha" value="">
+                <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Redefinir senha">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </button>
+              </form>
+              {% if u.ativo and u.id != usuario_atual.id %}
+              <form method="POST" action="/configuracoes/usuarios/{{ u.id }}/desativar"
+                    onsubmit="return confirm('Desativar {{ u.username }}?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)" title="Desativar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="page-section">
+    <div class="card card-padded">
+      <h2 class="section-title" style="margin-bottom:var(--sp-5)">Categorias de produto</h2>
+      <form method="POST" action="/configuracoes/categorias" style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-5)">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="form-input" name="nome" placeholder="Nome da nova categoria" style="flex:1" required />
+        <button type="submit" class="btn btn-primary">Adicionar</button>
+      </form>
+      {% if categorias %}
+        {% for cat in categorias %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+          <span class="category-tag">{{ cat.nome }}</span>
+          <form method="POST" action="/configuracoes/categorias/{{ cat.id }}/deletar"
+                onsubmit="return confirm('Excluir {{ cat.nome }}?')" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            </button>
+          </form>
+        </div>
+        {% endfor %}
+      {% else %}
+      <p style="font-size:var(--text-sm);color:var(--c-text-3);text-align:center;padding:var(--sp-5)">Nenhuma categoria cadastrada.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="page-section">
+    <div class="card card-padded">
+      <h2 class="section-title" style="margin-bottom:var(--sp-5)">Alterar minha senha</h2>
+      <form method="POST" action="/configuracoes/minha-senha"
+            style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-3)">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Senha atual</label>
+          <input class="form-input" type="password" name="senha_atual" required />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Nova senha</label>
+          <input class="form-input" type="password" name="nova_senha" required />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Confirmar</label>
+          <input class="form-input" type="password" name="confirmacao" required />
+        </div>
+        <div style="grid-column:1/-1;display:flex;justify-content:flex-end">
+          <button type="submit" class="btn btn-primary">Alterar senha</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="page-section">
+    <div class="card card-padded">
+      <h2 class="section-title" style="margin-bottom:var(--sp-4)">Sobre o sistema</h2>
+      <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
+        <div style="display:flex;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+          <span style="font-size:var(--text-sm);color:var(--c-text-3)">Sistema</span>
+          <span style="font-size:var(--text-sm);font-weight:500">CDN — Cria da Natureza</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+          <span style="font-size:var(--text-sm);color:var(--c-text-3)">Versão</span>
+          <span class="badge badge-teal">v1.0.0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:var(--sp-3) 0">
+          <span style="font-size:var(--text-sm);color:var(--c-text-3)">Backend</span>
+          <span style="font-size:var(--text-sm);font-weight:500">Flask + SQLite + Jinja2</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

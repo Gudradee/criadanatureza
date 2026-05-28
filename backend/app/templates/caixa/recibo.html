@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Recibo #{{ venda.id }}{% endblock %}
+{% block page_title %}Recibo da venda{% endblock %}
+{% block page_subtitle %}#{{ venda.id }} — {{ venda.data_venda.strftime("%d/%m/%Y %H:%M") }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/caixa" class="btn">Nova leitura</a>
+<a href="/caixa/historico" class="btn">Histórico</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:640px;margin:0 auto">
+
+  <div class="card" style="padding:var(--sp-6);margin-bottom:var(--sp-5);text-align:center;border-top:4px solid var(--color-success)">
+    <div style="font-size:2.5rem;margin-bottom:var(--sp-2)">✅</div>
+    <h2 style="font-size:1.3rem;margin-bottom:var(--sp-1)">Venda confirmada!</h2>
+    {% if venda.forma_pagamento %}
+    <p style="color:var(--color-text-muted);font-size:.9rem">{{ venda.forma_pagamento }}</p>
+    {% endif %}
+  </div>
+
+  <div class="card" style="margin-bottom:var(--sp-5)">
+    <div style="padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--color-border)">
+      <h3 style="font-size:.95rem;font-weight:600">Itens</h3>
+    </div>
+    <table class="table" style="width:100%">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th style="text-align:center">Qtd</th>
+          <th style="text-align:right">Preço bruto</th>
+          <th style="text-align:right">Desconto</th>
+          <th style="text-align:right">Preço líquido</th>
+          <th style="text-align:right">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for item in venda.itens %}
+      <tr>
+        <td style="font-weight:500">{{ item.nome_produto }}</td>
+        <td style="text-align:center">{{ item.quantidade }}</td>
+        <td style="text-align:right">{{ item.preco_unitario_bruto | brl }}</td>
+        <td style="text-align:right;color:var(--color-danger)">
+          {% if item.desconto_valor > 0 %}
+            − {{ item.desconto_valor | brl }}
+            <small style="color:var(--color-text-muted)">({{ "%.1f"|format(item.desconto_percentual) }}%)</small>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td style="text-align:right">{{ item.preco_unitario_liquido | brl }}</td>
+        <td style="text-align:right;font-weight:600">{{ item.subtotal_liquido | brl }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="padding:var(--sp-5)">
+    <div style="display:flex;flex-direction:column;gap:var(--sp-2)">
+      <div style="display:flex;justify-content:space-between;font-size:.9rem">
+        <span style="color:var(--color-text-muted)">Total bruto</span>
+        <span>{{ venda.valor_total_bruto | brl }}</span>
+      </div>
+      {% if venda.valor_total_desconto > 0 %}
+      <div style="display:flex;justify-content:space-between;font-size:.9rem;color:var(--color-danger)">
+        <span>Desconto total</span>
+        <span>− {{ venda.valor_total_desconto | brl }}</span>
+      </div>
+      {% endif %}
+      <div style="display:flex;justify-content:space-between;font-size:1.2rem;font-weight:700;border-top:1px solid var(--color-border);padding-top:var(--sp-3);margin-top:var(--sp-1)">
+        <span>Total líquido</span>
+        <span style="color:var(--color-primary)">{{ venda.valor_total_liquido | brl }}</span>
+      </div>
+    </div>
+    {% if venda.observacoes %}
+    <p style="margin-top:var(--sp-4);font-size:.85rem;color:var(--color-text-muted);border-top:1px solid var(--color-border);padding-top:var(--sp-3)">
+      <strong>Obs:</strong> {{ venda.observacoes }}
+    </p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

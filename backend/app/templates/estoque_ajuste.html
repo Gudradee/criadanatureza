@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Ajuste de estoque{% endblock %}
+
+{% block topbar_left %}
+<div class="topbar-left">
+  <div style="display:flex;align-items:center;gap:var(--sp-3)">
+    <a href="/estoque" class="btn btn-ghost btn-sm btn-icon" title="Voltar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
+    <div>
+      <h1 class="page-title">Ajuste de estoque</h1>
+      <span class="page-subtitle">{{ produto.nome }}</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:520px;margin:0 auto">
+  <div class="card card-padded">
+    <p style="font-size:var(--text-sm);color:var(--c-text-3);margin-bottom:var(--sp-5)">
+      Estoque atual: <strong style="color:var(--c-text-1)">{{ produto.quantidade }} unidades</strong>
+      <br>
+      Custo atual: <strong style="color:var(--c-text-1)">{{ produto.preco_custo | brl }}</strong>
+      · Venda atual: <strong style="color:var(--c-text-1)">{{ produto.preco_venda | brl }}</strong>
+    </p>
+    <form method="POST" action="/estoque/{{ produto.id }}/ajuste" id="form-ajuste">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group">
+        <label class="form-label required">Tipo de movimentação</label>
+        <select class="form-select" name="tipo" id="ajuste-tipo" required>
+          <option value="entrada">Entrada — adicionar ao estoque</option>
+          <option value="saida">Saída — remover do estoque</option>
+          <option value="ajuste">Ajuste — definir quantidade exata</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label required">Quantidade</label>
+        <input class="form-input" name="quantidade" type="number" min="1" placeholder="0" required />
+      </div>
+
+      <div id="bloco-precos" style="background:var(--bg-subtle);border:1px solid var(--c-border-soft);border-radius:var(--r-md);padding:var(--sp-4);margin-bottom:var(--sp-4)">
+        <p style="font-size:var(--text-xs);color:var(--c-text-3);margin:0 0 var(--sp-3)">
+          Se o custo ou o preço de venda mudou para esta nova entrada, informe abaixo.
+          O sistema mantém o registro de cada lote com seu próprio preço — o lucro real
+          das unidades antigas é preservado.
+        </p>
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Preço de custo deste lote (R$)</label>
+            <input class="form-input" name="preco_custo" type="number" min="0" step="0.01"
+                   value="{{ produto.preco_custo }}" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Preço de venda deste lote (R$)</label>
+            <input class="form-input" name="preco_venda" type="number" min="0" step="0.01"
+                   value="{{ produto.preco_venda }}" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Motivo (opcional)</label>
+        <input class="form-input" name="motivo" placeholder="Ex: Recebimento de fornecedor, brinde, etc." />
+      </div>
+      <div class="modal-footer" style="padding:0;margin-top:var(--sp-6)">
+        <a href="/estoque" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">Confirmar ajuste</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+
+  (function(){
+    var tipoEl = document.getElementById('ajuste-tipo');
+    var bloco  = document.getElementById('bloco-precos');
+    function atualizar(){
+      bloco.style.display = tipoEl.value === 'entrada' ? 'block' : 'none';
+    }
+    tipoEl.addEventListener('change', atualizar);
+    atualizar();
+  })();
+</script>
+{% endblock %}

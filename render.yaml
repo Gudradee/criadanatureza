@@ -1,0 +1,50 @@
+# Configuração declarativa do Render — https://render.com/docs/blueprint-spec
+#
+# Como usar:
+#   1. Suba este repo no GitHub
+#   2. No Render: New + → Blueprint → conecte o repo
+#   3. O Render lê este arquivo e cria o serviço automaticamente
+#
+# Notas:
+#  - O plano `starter` é o RECOMENDADO em produção (sempre online + permite disco).
+#    Pra testar grátis nos primeiros dias, troque `plan: starter` por `plan: free`
+#    e DELETE o bloco `disks:` (Free não suporta disco — dados serão voláteis).
+#  - As env vars marcadas como `sync: false` (CDN_SECRET_KEY, ADMIN_PASSWORD) NÃO
+#    vêm deste arquivo — você seta no painel do Render por segurança.
+
+services:
+  - type: web
+    name: cdn-app
+    runtime: python
+    plan: starter                          # <- mude para `free` se for testar grátis
+    region: oregon                         # `oregon` (US-West) ou `frankfurt` (EU)
+    branch: main                           # branch que dispara deploy automático
+    rootDir: backend                       # tudo roda a partir de backend/
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 2 -b 0.0.0.0:$PORT main:app
+    healthCheckPath: /login                # /login responde 200 mesmo deslogado
+    autoDeploy: true                       # cada git push redeploy automático
+
+    # Persistent Disk — guarda cdn.db e uploads/ entre deploys/restarts.
+    # IMPORTANTE: disco só funciona em planos pagos. Remova este bloco no Free.
+    disk:
+      name: cdn-data
+      mountPath: /data
+      sizeGB: 1
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: DATABASE_PATH
+        value: /data/cdn.db
+      - key: UPLOADS_DIR
+        value: /data/uploads
+      # Segredos — setar manualmente no painel do Render (Settings → Environment)
+      - key: CDN_SECRET_KEY
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
