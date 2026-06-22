@@ -314,7 +314,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')fecharPopup(
         </button>
       </form>
       <form method="POST" action="/estoque/{{ p.id }}/deletar"
-            onsubmit="return confirm('Excluir DEFINITIVAMENTE o produto {{ p.nome }}?\n\nSó funciona se o produto não tiver histórico (vendas, movimentações). Caso contrário, use Arquivar.')"
+            onsubmit="return confirm('Excluir DEFINITIVAMENTE o produto {{ p.nome }}?\n\nSerão apagados também os registros gerados pelo cadastro (movimentações de estoque e o custo de produção lançado no financeiro).\n\nNão funciona se o produto já foi usado em vendas, envios ou devoluções — nesse caso use Arquivar.')"
             style="display:inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Excluir definitivamente" style="color:var(--c-danger)">

@@ -192,6 +192,7 @@ def criar():
                 tipo             = "variavel",
                 categoria        = "Custo de Produção",
                 data_competencia = datetime(hoje.year, hoje.month, 1),
+                produto_id       = produto.id,
             )
             db.add(desp)
             db.flush()
@@ -285,6 +286,7 @@ def atualizar(produto_id):
                 tipo             = "variavel",
                 categoria        = "Custo de Produção",
                 data_competencia = datetime(hoje.year, hoje.month, 1),
+                produto_id       = produto.id,
             )
             db.add(desp)
             db.flush()
@@ -305,15 +307,16 @@ def atualizar(produto_id):
     flash(f"Produto '{produto.nome}' atualizado.", "success")
     return redirect("/estoque")
 
-def _dependencias_produto(db, produto_id):
-
+def _dependencias_externas(db, produto_id):
+    # Vínculos com terceiros (parceiros, vendas, clientes). Estes BLOQUEIAM a
+    # exclusão — apagá-los significaria perder histórico real de operações.
     return {
-        "movimentacoes":   db.query(models.MovimentacaoEstoque).filter_by(produto_id=produto_id).count(),
-        "itens_envio":     db.query(models.ItemEnvio).filter_by(produto_id=produto_id).count(),
-        "itens_venda":     db.query(models.ItemVenda).filter_by(produto_id=produto_id).count(),
-        "itens_devolucao": db.query(models.ItemDevolucao).filter_by(produto_id=produto_id).count(),
-        "itens_pre_venda": db.query(models.ItemPreVenda).filter_by(produto_id=produto_id).count(),
         "itens_venda_final": db.query(models.ItemVendaFinal).filter_by(produto_id=produto_id).count(),
+        "itens_envio":       db.query(models.ItemEnvio).filter_by(produto_id=produto_id).count(),
+        "itens_devolucao":   db.query(models.ItemDevolucao).filter_by(produto_id=produto_id).count(),
+        "itens_pre_venda":   db.query(models.ItemPreVenda).filter_by(produto_id=produto_id).count(),
+        "itens_solicitacao": db.query(models.ItemSolicitacaoDevolucao).filter_by(produto_id=produto_id).count(),
+        "itens_venda":       db.query(models.ItemVenda).filter_by(produto_id=produto_id).count(),
     }
 
 @bp.route("/<int:produto_id>/deletar", methods=["POST"])
@@ -326,29 +329,46 @@ def deletar(produto_id):
         flash("Produto não encontrado.", "warning")
         return redirect("/estoque")
 
-    dep = _dependencias_produto(db, produto_id)
-    total = sum(dep.values())
-    if total > 0:
+    ext = _dependencias_externas(db, produto_id)
+    if sum(ext.values()) > 0:
         partes = []
-        if dep["movimentacoes"]:     partes.append(f"{dep['movimentacoes']} movimentação(ões) de estoque")
-        if dep["itens_venda_final"]: partes.append(f"{dep['itens_venda_final']} item(ns) em vendas pelo caixa")
-        if dep["itens_envio"]:       partes.append(f"{dep['itens_envio']} item(ns) em envios a parceiros")
-        if dep["itens_devolucao"]:   partes.append(f"{dep['itens_devolucao']} item(ns) em devoluções")
-        if dep["itens_pre_venda"]:   partes.append(f"{dep['itens_pre_venda']} item(ns) em pré-vendas (QR)")
-        if dep["itens_venda"]:       partes.append(f"{dep['itens_venda']} item(ns) em vendas manuais (legado)")
+        if ext["itens_venda_final"]: partes.append(f"{ext['itens_venda_final']} item(ns) em vendas pelo caixa")
+        if ext["itens_envio"]:       partes.append(f"{ext['itens_envio']} item(ns) em envios a parceiros")
+        if ext["itens_devolucao"]:   partes.append(f"{ext['itens_devolucao']} item(ns) em devoluções")
+        if ext["itens_pre_venda"]:   partes.append(f"{ext['itens_pre_venda']} item(ns) em pré-vendas (QR)")
+        if ext["itens_solicitacao"]: partes.append(f"{ext['itens_solicitacao']} item(ns) em solicitações de devolução")
+        if ext["itens_venda"]:       partes.append(f"{ext['itens_venda']} item(ns) em vendas manuais (legado)")
         flash(
-            f"Produto '{produto.nome}' tem histórico no sistema "
-            f"({' · '.join(partes)}) e não pode ser excluído sem perder esses "
-            "dados. Use 'Arquivar' para ocultá-lo das listas sem apagar o histórico.",
+            f"Produto '{produto.nome}' já foi usado em operações reais "
+            f"({' · '.join(partes)}) e não pode ser excluído sem perder esse "
+            "histórico. Use 'Arquivar' para ocultá-lo das listas preservando os dados.",
             "warning"
         )
         return redirect("/estoque")
+
+    # Sem vínculos externos: produto criado por engano. A exclusão remove também
+    # os registros que o próprio cadastro gerou — movimentações de estoque e as
+    # despesas de "Custo de Produção" (com suas parcelas, em cascata).
+    despesas = db.query(models.Despesa).filter_by(produto_id=produto_id).all()
+    n_desp = len(despesas)
+    for d in despesas:
+        db.delete(d)
+    n_mov = (
+        db.query(models.MovimentacaoEstoque)
+        .filter_by(produto_id=produto_id)
+        .delete(synchronize_session=False)
+    )
 
     produto.parceiros_catalogo.clear()
     nome = produto.nome
     db.delete(produto)
     db.commit()
-    flash(f"Produto '{nome}' excluído.", "success")
+
+    extras = []
+    if n_mov:  extras.append(f"{n_mov} movimentação(ões) de estoque")
+    if n_desp: extras.append(f"{n_desp} lançamento(s) de custo de produção")
+    sufixo = f" Também foram removidos: {' e '.join(extras)}." if extras else ""
+    flash(f"Produto '{nome}' excluído definitivamente.{sufixo}", "success")
     return redirect("/estoque")
 
 @bp.route("/<int:produto_id>/arquivar", methods=["POST"])
@@ -422,6 +442,7 @@ def ajustar(produto_id):
                 tipo             = "variavel",
                 categoria        = "Custo de Produção",
                 data_competencia = datetime(hoje.year, hoje.month, 1),
+                produto_id       = produto.id,
             )
             db.add(desp)
             db.flush()

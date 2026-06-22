@@ -368,10 +368,12 @@ class Despesa(Base):
     data_competencia = Column(DateTime(timezone=True), nullable=False)
     despesa_fixa_id  = Column(Integer, ForeignKey("despesas_fixas.id"), nullable=True)
     parceiro_id      = Column(Integer, ForeignKey("parceiros.id"), nullable=True)
+    produto_id       = Column(Integer, ForeignKey("produtos.id"), nullable=True)
     criado_em        = Column(DateTime(timezone=True), server_default=func.now())
 
     despesa_fixa = relationship("DespesaFixa", back_populates="instancias")
     parceiro     = relationship("Parceiro")
+    produto      = relationship("Produto")
     parcelas     = relationship("ParcelaPagamento", back_populates="despesa",
                                 cascade="all, delete-orphan",
                                 order_by="ParcelaPagamento.numero")

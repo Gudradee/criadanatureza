@@ -143,6 +143,38 @@ def _migrate_db():
             db.execute(text("ALTER TABLE despesas ADD COLUMN parceiro_id INTEGER REFERENCES parceiros(id)"))
             db.commit()
             print("[CDN] Migração: parceiro_id adicionado em despesas.")
+
+        if "produto_id" not in cols_desp:
+            db.execute(text("ALTER TABLE despesas ADD COLUMN produto_id INTEGER REFERENCES produtos(id)"))
+            db.commit()
+            print("[CDN] Migração: produto_id adicionado em despesas.")
+            # Backfill: vincula despesas de 'Custo de Produção' ao produto pelo nome
+            # (apenas quando o nome corresponde a um único produto, para evitar erro).
+            try:
+                prod_rows = db.execute(text("SELECT id, nome FROM produtos")).fetchall()
+                nome_para_ids = {}
+                for pid, pnome in prod_rows:
+                    nome_para_ids.setdefault(pnome, []).append(pid)
+                desp_rows = db.execute(text(
+                    "SELECT id, descricao FROM despesas "
+                    "WHERE categoria = 'Custo de Produção' AND produto_id IS NULL"
+                )).fetchall()
+                vinculadas = 0
+                for did, descricao in desp_rows:
+                    if not descricao or not descricao.startswith("Produção: "):
+                        continue
+                    nome = descricao[len("Produção: "):].split(" × ")[0].strip()
+                    ids = nome_para_ids.get(nome)
+                    if ids and len(ids) == 1:
+                        db.execute(text("UPDATE despesas SET produto_id = :pid WHERE id = :did"),
+                                   {"pid": ids[0], "did": did})
+                        vinculadas += 1
+                if vinculadas:
+                    db.commit()
+                    print(f"[CDN] Migração: {vinculadas} despesa(s) de produção vinculadas a produtos.")
+            except Exception as e:
+                db.rollback()
+                print(f"[CDN] Backfill produto_id em despesas falhou: {e}")
     except Exception as e:
         db.rollback()
         print(f"[CDN] Erro na migração: {e}")
