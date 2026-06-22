@@ -110,28 +110,55 @@
     }
 
     .cat-card {
-      background: #fff;
+      height: 360px;
+      perspective: 900px;
       border-radius: 16px;
+    }
+    .cat-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform .55s cubic-bezier(.4,0,.2,1);
+      border-radius: 16px;
+    }
+    .cat-card:hover .cat-card-inner {
+      transform: rotateY(180deg);
+    }
+    .cat-card-front,
+    .cat-card-back {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
       overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,.07);
-      transition: transform .15s, box-shadow .15s;
+    }
+    .cat-card-front {
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
       display: flex;
       flex-direction: column;
     }
-    .cat-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 20px rgba(0,0,0,.12);
+    .cat-card-back {
+      background: #f5f0e8;
+      box-shadow: 0 4px 20px rgba(0,0,0,.13);
+      transform: rotateY(180deg);
+      display: flex;
+      flex-direction: column;
+      padding: 1.25rem 1.25rem 1rem;
     }
 
     .cat-card-img {
       width: 100%;
-      aspect-ratio: 1 / 1;
+      height: 200px;
       object-fit: cover;
       display: block;
+      flex-shrink: 0;
     }
     .cat-card-placeholder {
       width: 100%;
-      aspect-ratio: 1 / 1;
+      height: 200px;
       background: #f0ebe3;
       display: flex;
       flex-direction: column;
@@ -140,13 +167,15 @@
       gap: .5rem;
       color: #b5a898;
       font-size: .75rem;
+      flex-shrink: 0;
     }
 
     .cat-card-body {
-      padding: 1rem;
+      padding: .875rem 1rem 1rem;
       flex: 1;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
     .cat-card-cat {
       font-size: .7rem;
@@ -163,12 +192,17 @@
       margin-bottom: .35rem;
     }
     .cat-card-desc {
-      font-size: .8rem;
-      color: #7a6f64;
-      line-height: 1.4;
-      margin-bottom: .75rem;
+      font-size: .77rem;
+      color: #5a4a3a;
+      line-height: 1.6;
       flex: 1;
+      overflow-y: auto;
+      white-space: pre-line;
+      margin-bottom: .5rem;
+      padding-right: .25rem;
     }
+    .cat-card-desc::-webkit-scrollbar { width: 4px; }
+    .cat-card-desc::-webkit-scrollbar-thumb { background: #cfc4b5; border-radius: 4px; }
     .cat-card-footer {
       display: flex;
       align-items: center;
@@ -478,6 +512,96 @@
       color: #3d7a3f;
     }
     .nav-access svg { display: block; }
+
+    /* ── Botão / painel de acessibilidade ───────────── */
+    .a11y-fab {
+      position: fixed;
+      left: 1.25rem;
+      bottom: 1.25rem;
+      width: 3.25rem;
+      height: 3.25rem;
+      border-radius: 50%;
+      background: #3d7a3f;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,.22);
+      z-index: 1200;
+      transition: background .15s, transform .1s;
+    }
+    .a11y-fab:hover { background: #2f6231; }
+    .a11y-fab:active { transform: scale(.94); }
+    .a11y-fab:focus-visible { outline: 3px solid #ffd54a; outline-offset: 2px; }
+    .a11y-fab svg { display: block; }
+
+    .a11y-panel {
+      position: fixed;
+      left: 1.25rem;
+      bottom: 5rem;
+      width: 250px;
+      max-width: calc(100vw - 2.5rem);
+      background: #fff;
+      border: 1px solid #e8e0d4;
+      border-radius: 14px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.18);
+      padding: 1rem;
+      z-index: 1201;
+      display: none;
+    }
+    .a11y-panel.open { display: block; }
+    .a11y-panel h3 {
+      margin: 0 0 .75rem;
+      font-size: .95rem;
+      font-weight: 700;
+      color: #2d2a24;
+    }
+    .a11y-btn {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      width: 100%;
+      text-align: left;
+      background: #f7f3ee;
+      border: 1px solid #ddd5c8;
+      border-radius: 9px;
+      padding: .55rem .75rem;
+      margin-bottom: .5rem;
+      font-size: .85rem;
+      font-weight: 600;
+      color: #3a342c;
+      cursor: pointer;
+      transition: background .12s, border-color .12s;
+    }
+    .a11y-btn:hover { background: #ece5da; }
+    .a11y-btn.active { background: #6b9e6e; border-color: #6b9e6e; color: #fff; }
+    .a11y-btn:focus-visible { outline: 2px solid #3d7a3f; outline-offset: 1px; }
+    .a11y-btn svg { display: block; flex-shrink: 0; }
+    .a11y-reset {
+      background: none;
+      border: none;
+      color: #9e8f80;
+      font-size: .78rem;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: .25rem 0 0;
+    }
+    .a11y-reset:hover { color: #c0392b; }
+
+    /* classes aplicadas ao <html> conforme preferências */
+    html.a11y-contrast {
+      filter: contrast(1.35) saturate(1.15);
+    }
+    html.a11y-links a {
+      text-decoration: underline !important;
+      text-underline-offset: 2px;
+    }
+    html.a11y-readable, html.a11y-readable * {
+      font-family: Verdana, Tahoma, Arial, sans-serif !important;
+      letter-spacing: .02em;
+    }
   </style>
 </head>
 <body>
@@ -862,25 +986,50 @@
       grid.style.display = 'grid';
       grid.innerHTML = lista.map(function(p) {
         var noCarrinho = !!_carrinho[p.id];
-        var imgHtml = p.imagem
-          ? '<img class="cat-card-img" src="' + p.imagem + '" alt="' + p.nome + '" loading="lazy">'
-          : '<div class="cat-card-placeholder"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>' + p.nome + '</span></div>';
-        var catHtml = p.categoria ? '<div class="cat-card-cat">' + p.categoria + '</div>' : '';
-        var descHtml = p.descricao ? '<div class="cat-card-desc">' + p.descricao + '</div>' : '';
         var addLabel = noCarrinho ? '✓ No carrinho' : '+ Adicionar';
         var addClass = noCarrinho ? 'cat-add-btn adicionado' : 'cat-add-btn';
+
+        var imgHtml = p.imagem
+          ? '<img class="cat-card-img" src="' + p.imagem + '" alt="' + p.nome.replace(/"/g,'&quot;') + '" loading="lazy">'
+          : '<div class="cat-card-placeholder"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>' + p.nome + '</span></div>';
+
+        var catHtml = p.categoria ? '<div class="cat-card-cat">' + p.categoria + '</div>' : '';
+
+        var descSafe = p.descricao
+          ? p.descricao.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          : '';
+
         return '<div class="cat-card">'
+          + '<div class="cat-card-inner">'
+
+          // ── Frente
+          + '<div class="cat-card-front">'
           + imgHtml
           + '<div class="cat-card-body">'
           + catHtml
           + '<div class="cat-card-name">' + p.nome + '</div>'
-          + descHtml
-          + '<div class="cat-card-footer">'
+          + '<div class="cat-card-footer" style="margin-top:auto">'
+          + '<div class="cat-card-price">' + _brl(p.preco) + '</div>'
+          + '<span style="font-size:.68rem;color:#b5a898;font-style:italic">ver mais →</span>'
+          + '</div>'
+          + '</div>'
+          + '</div>'
+
+          // ── Verso
+          + '<div class="cat-card-back">'
+          + catHtml
+          + '<div class="cat-card-name" style="font-size:.9rem;margin-bottom:.5rem">' + p.nome + '</div>'
+          + '<div class="cat-card-desc">'
+          + (descSafe || '<em style="opacity:.45">Sem descrição.</em>')
+          + '</div>'
+          + '<div class="cat-card-footer" style="flex-shrink:0;margin-top:.5rem">'
           + '<div class="cat-card-price">' + _brl(p.preco) + '</div>'
           + '<button class="' + addClass + '" onclick="adicionarAoCarrinho(' + p.id + ')" id="addBtn_' + p.id + '">' + addLabel + '</button>'
           + '</div>'
           + '</div>'
-          + '</div>';
+
+          + '</div>'   // cat-card-inner
+          + '</div>';  // cat-card
       }).join('');
     }
 
@@ -1025,6 +1174,121 @@
       var url = 'https://wa.me/5538999058194?text=' + encodeURIComponent(msg);
       window.open(url, '_blank');
     }
+  </script>
+
+  <!-- ── ACESSIBILIDADE ─────────────────────────────────────────── -->
+  <button class="a11y-fab" id="a11yFab" onclick="a11yToggle()" aria-label="Opções de acessibilidade" aria-expanded="false" aria-controls="a11yPanel" title="Acessibilidade">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="12" cy="3.5" r="1.9"/>
+      <path d="M21 7.5c0 .6-.4 1-1 1.1l-4.5.7v3l1.8 5.6a1.1 1.1 0 1 1-2.1.7L12.5 14h-1l-1.7 4.6a1.1 1.1 0 1 1-2.1-.7L9.5 12.3v-3L5 8.6a1.1 1.1 0 0 1 .3-2.1L11 7.4h2L18.7 6.5a1.1 1.1 0 0 1 1.3.9c0 .03 0 .07 0 .1z"/>
+    </svg>
+  </button>
+
+  <div class="a11y-panel" id="a11yPanel" role="dialog" aria-label="Opções de acessibilidade">
+    <h3>Acessibilidade</h3>
+    <button class="a11y-btn" id="a11yFontUp" onclick="a11yFont(1)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="9" y2="4"/><line x1="14" y1="20" x2="9" y2="4"/><line x1="6" y1="14" x2="12" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg>
+      Aumentar fonte
+    </button>
+    <button class="a11y-btn" id="a11yFontDown" onclick="a11yFont(-1)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="9" y2="4"/><line x1="14" y1="20" x2="9" y2="4"/><line x1="6" y1="14" x2="12" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/></svg>
+      Diminuir fonte
+    </button>
+    <button class="a11y-btn" id="a11yContrast" onclick="a11yToggleClass('a11y-contrast', this)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"/></svg>
+      Alto contraste
+    </button>
+    <button class="a11y-btn" id="a11yLinks" onclick="a11yToggleClass('a11y-links', this)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      Destacar links
+    </button>
+    <button class="a11y-btn" id="a11yReadable" onclick="a11yToggleClass('a11y-readable', this)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+      Fonte legível
+    </button>
+    <button class="a11y-reset" onclick="a11yReset()">Restaurar padrão</button>
+  </div>
+
+  <script>
+    (function () {
+      var A11Y_KEY = 'criaA11y';
+      var fontStep = 0;          // -2 .. +4
+      var classes = { 'a11y-contrast': false, 'a11y-links': false, 'a11y-readable': false };
+
+      function load() {
+        try {
+          var s = JSON.parse(localStorage.getItem(A11Y_KEY) || '{}');
+          if (typeof s.fontStep === 'number') fontStep = Math.max(-2, Math.min(4, s.fontStep));
+          if (s.classes) Object.keys(classes).forEach(function (k) { classes[k] = !!s.classes[k]; });
+        } catch (e) {}
+      }
+
+      function save() {
+        try {
+          localStorage.setItem(A11Y_KEY, JSON.stringify({ fontStep: fontStep, classes: classes }));
+        } catch (e) {}
+      }
+
+      function apply() {
+        document.documentElement.style.fontSize = (100 + fontStep * 12.5) + '%';
+        Object.keys(classes).forEach(function (k) {
+          document.documentElement.classList.toggle(k, classes[k]);
+        });
+        // refletir estado nos botões
+        var map = { a11yContrast: 'a11y-contrast', a11yLinks: 'a11y-links', a11yReadable: 'a11y-readable' };
+        Object.keys(map).forEach(function (id) {
+          var b = document.getElementById(id);
+          if (b) b.classList.toggle('active', classes[map[id]]);
+        });
+      }
+
+      window.a11yToggle = function () {
+        var panel = document.getElementById('a11yPanel');
+        var fab = document.getElementById('a11yFab');
+        var open = panel.classList.toggle('open');
+        fab.setAttribute('aria-expanded', open ? 'true' : 'false');
+      };
+
+      window.a11yFont = function (dir) {
+        fontStep = Math.max(-2, Math.min(4, fontStep + dir));
+        apply(); save();
+      };
+
+      window.a11yToggleClass = function (cls, btn) {
+        classes[cls] = !classes[cls];
+        apply(); save();
+      };
+
+      window.a11yReset = function () {
+        fontStep = 0;
+        Object.keys(classes).forEach(function (k) { classes[k] = false; });
+        apply(); save();
+      };
+
+      // fechar painel ao clicar fora
+      document.addEventListener('click', function (e) {
+        var panel = document.getElementById('a11yPanel');
+        var fab = document.getElementById('a11yFab');
+        if (panel.classList.contains('open') && !panel.contains(e.target) && !fab.contains(e.target)) {
+          panel.classList.remove('open');
+          fab.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      // fechar com Esc
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          var panel = document.getElementById('a11yPanel');
+          if (panel.classList.contains('open')) {
+            panel.classList.remove('open');
+            document.getElementById('a11yFab').setAttribute('aria-expanded', 'false');
+          }
+        }
+      });
+
+      load();
+      apply();
+    })();
   </script>
 
 </body>

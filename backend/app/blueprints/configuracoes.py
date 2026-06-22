@@ -22,13 +22,23 @@ def listar():
     )
     metodos    = db.query(models.MetodoRecebimento).order_by(models.MetodoRecebimento.nome).all()
     pontos     = db.query(models.PontoVenda).order_by(models.PontoVenda.nome).all()
+
+    metodos_usados_ids = {
+        row[0] for row in
+        db.query(models.VendaFinal.metodo_recebimento_id)
+        .filter(models.VendaFinal.metodo_recebimento_id.isnot(None))
+        .distinct()
+        .all()
+    }
+
     return render_template("configuracoes.html",
-        active_page = "config",
-        categorias  = categorias,
-        parceiros   = parceiros,
-        usuarios    = usuarios,
-        metodos     = metodos,
-        pontos      = pontos,
+        active_page        = "config",
+        categorias         = categorias,
+        parceiros          = parceiros,
+        usuarios           = usuarios,
+        metodos            = metodos,
+        pontos             = pontos,
+        metodos_usados_ids = metodos_usados_ids,
     )
 
 @bp.route("/categorias", methods=["POST"])
@@ -154,9 +164,27 @@ def deletar_metodo(metodo_id):
     db     = get_db()
     metodo = db.query(models.MetodoRecebimento).get(metodo_id)
     if metodo:
-        metodo.ativo = False
+        usado = db.query(models.VendaFinal).filter_by(metodo_recebimento_id=metodo_id).first() is not None
+        if usado:
+            metodo.ativo = False
+            db.commit()
+            flash(f"Método '{metodo.nome}' desativado (utilizado em vendas existentes).", "success")
+        else:
+            nome = metodo.nome
+            db.delete(metodo)
+            db.commit()
+            flash(f"Método '{nome}' excluído permanentemente.", "success")
+    return redirect("/configuracoes")
+
+@bp.route("/metodos/<int:metodo_id>/reativar", methods=["POST"])
+@admin_required
+def reativar_metodo(metodo_id):
+    db     = get_db()
+    metodo = db.query(models.MetodoRecebimento).get(metodo_id)
+    if metodo:
+        metodo.ativo = True
         db.commit()
-        flash(f"Método '{metodo.nome}' desativado.", "success")
+        flash(f"Método '{metodo.nome}' reativado.", "success")
     return redirect("/configuracoes")
 
 @bp.route("/pontos/novo", methods=["POST"])

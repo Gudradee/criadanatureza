@@ -114,19 +114,55 @@ def recebimentos():
 @admin_required
 def marcar_recebimento(parcela_id):
 
-    db = get_db()
+    db      = get_db()
     parcela = db.query(models.ParcelaRecebimento).filter_by(id=parcela_id).first()
     if not parcela:
         abort(404)
+
+    now   = datetime.now()
+    venda = db.query(models.VendaFinal).filter_by(id=parcela.venda_id).first()
+
     if parcela.recebido:
         parcela.recebido    = False
         parcela.recebido_em = None
+        despesa_taxa = (
+            db.query(models.Despesa)
+            .filter(
+                models.Despesa.categoria == "Taxa de Pagamento",
+                models.Despesa.descricao.like(f"% Venda #{parcela.venda_id} Parc#{parcela_id}"),
+            )
+            .first()
+        )
+        if despesa_taxa:
+            db.query(models.ParcelaPagamento).filter_by(despesa_id=despesa_taxa.id).delete(synchronize_session=False)
+            db.delete(despesa_taxa)
     else:
         parcela.recebido    = True
-        parcela.recebido_em = datetime.now()
-    db.flush()
+        parcela.recebido_em = now
+        if venda and venda.metodo_recebimento and (venda.metodo_recebimento.taxa_percentual or 0) > 0:
+            metodo     = venda.metodo_recebimento
+            taxa_valor = round(float(parcela.valor or 0) * metodo.taxa_percentual, 2)
+            if taxa_valor > 0:
+                despesa = models.Despesa(
+                    descricao        = f"Taxa {metodo.nome} Venda #{venda.id} Parc#{parcela_id}",
+                    valor            = taxa_valor,
+                    tipo             = "variavel",
+                    categoria        = "Taxa de Pagamento",
+                    data_competencia = now,
+                )
+                db.add(despesa)
+                db.flush()
+                db.add(models.ParcelaPagamento(
+                    despesa_id = despesa.id,
+                    numero     = 1,
+                    total      = 1,
+                    valor      = taxa_valor,
+                    vencimento = now,
+                    pago       = True,
+                    pago_em    = now,
+                ))
 
-    venda = db.query(models.VendaFinal).filter_by(id=parcela.venda_id).first()
+    db.flush()
     if venda:
         todas = list(venda.parcelas_recebimento)
         venda.recebido    = all(p.recebido for p in todas) if todas else False

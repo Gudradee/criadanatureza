@@ -20,10 +20,10 @@ def _sfmt(v):
     if v < 0:      return f"-R${abs(v):.0f}"
     return f"R${v:.0f}"
 
-def _build_grafico_mes(fat_cum, desp_cum, hoje, *,
+def _build_grafico_mes(fat_cum, desp_cum, hoje, *, caixa_inicial=0.0,
                         label_fat='Faturamento', label_desp='Despesas', label_saldo='Saldo'):
 
-    saldo = [round(f - d, 2) for f, d in zip(fat_cum, desp_cum)]
+    saldo = [round(caixa_inicial + f - d, 2) for f, d in zip(fat_cum, desp_cum)]
     n     = len(saldo)
 
     lo = min(0, min(saldo) if saldo else 0)
@@ -152,8 +152,24 @@ def index():
         rf += fat_dia[i];  fat_cum.append(round(rf, 2))
         rd += desp_dia[i]; desp_cum.append(round(rd, 2))
 
+    # Caixa acumulado: tudo recebido menos tudo pago ANTES do início do mês
+    # selecionado entra como saldo inicial do caixa deste mês.
+    recebido_anterior = db.query(func.sum(models.ParcelaRecebimento.valor)).filter(
+        models.ParcelaRecebimento.recebido.is_(True),
+        models.ParcelaRecebimento.recebido_em.isnot(None),
+        models.ParcelaRecebimento.recebido_em < mes_ref,
+    ).scalar() or 0.0
+
+    pago_anterior = db.query(func.sum(models.ParcelaPagamento.valor)).filter(
+        models.ParcelaPagamento.pago.is_(True),
+        models.ParcelaPagamento.pago_em.isnot(None),
+        models.ParcelaPagamento.pago_em < mes_ref,
+    ).scalar() or 0.0
+
+    caixa_inicial = round(float(recebido_anterior) - float(pago_anterior), 2)
+
     grafico_mes = _build_grafico_mes(
-        fat_cum, desp_cum, mes_ref,
+        fat_cum, desp_cum, mes_ref, caixa_inicial=caixa_inicial,
         label_fat='Recebidos', label_desp='Contas pagas', label_saldo='Caixa',
     )
 

@@ -28,8 +28,19 @@
       </form>
 
       {% if metodos %}
+        {% set tem_inativos = metodos | selectattr("ativo", "equalto", false) | list | length > 0 %}
+        {% if tem_inativos %}
+        <div style="display:flex;justify-content:flex-end;margin-bottom:var(--sp-2)">
+          <button type="button" id="btn-mostrar-inativos" onclick="toggleMetodosInativos()"
+                  class="btn btn-ghost btn-sm" style="font-size:var(--text-xs);color:var(--c-text-3)">
+            Mostrar inativos
+          </button>
+        </div>
+        {% endif %}
+
         {% for m in metodos %}
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
+        <div class="{% if not m.ativo %}metodo-inativo{% endif %}"
+             style="display:{% if not m.ativo %}none{% else %}flex{% endif %};align-items:center;justify-content:space-between;padding:var(--sp-3) 0;border-bottom:1px solid var(--c-border-soft)">
           <div>
             <span style="font-weight:500;font-size:var(--text-sm)">{{ m.nome }}</span>
             {% if m.taxa_percentual > 0 %}
@@ -41,17 +52,43 @@
             <span class="badge badge-warning" style="margin-left:var(--sp-2)">Inativo</span>
             {% endif %}
           </div>
-          {% if m.ativo %}
+          {% if not m.ativo %}
+          <form method="POST" action="/configuracoes/metodos/{{ m.id }}/reativar"
+                onsubmit="return confirm('Reativar método {{ m.nome }}?')" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--c-teal);font-size:var(--text-xs)" title="Reativar">
+              Reativar
+            </button>
+          </form>
+          {% elif m.id in metodos_usados_ids %}
           <form method="POST" action="/configuracoes/metodos/{{ m.id }}/deletar"
-                onsubmit="return confirm('Desativar método {{ m.nome }}?')" style="display:inline">
+                onsubmit="return confirm('Desativar método {{ m.nome }}?\n\nEle foi usado em vendas e será apenas ocultado, mantendo o histórico.')" style="display:inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)" title="Desativar">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </form>
+          {% else %}
+          <form method="POST" action="/configuracoes/metodos/{{ m.id }}/deletar"
+                onsubmit="return confirm('Excluir permanentemente o método {{ m.nome }}?\n\nEle nunca foi usado e será removido definitivamente.')" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-ghost btn-sm btn-icon" style="color:var(--c-danger)" title="Excluir">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            </button>
+          </form>
           {% endif %}
         </div>
         {% endfor %}
+
+        <script>
+        function toggleMetodosInativos() {
+          const btn  = document.getElementById('btn-mostrar-inativos');
+          const rows = document.querySelectorAll('.metodo-inativo');
+          const showing = rows.length > 0 && rows[0].style.display !== 'none';
+          rows.forEach(r => r.style.display = showing ? 'none' : 'flex');
+          btn.textContent = showing ? 'Mostrar inativos' : 'Ocultar inativos';
+        }
+        </script>
       {% else %}
       <p style="font-size:var(--text-sm);color:var(--c-text-3);text-align:center;padding:var(--sp-5)">Nenhum método cadastrado.</p>
       {% endif %}
